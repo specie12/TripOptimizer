@@ -1,0 +1,203 @@
+// =============================================================================
+// TripOptimizer Database Schema
+// =============================================================================
+// Budget-first travel planning application
+// Tech Stack: PostgreSQL + Prisma ORM
+//
+// Design Principles:
+// - Anonymous users first (no auth required for MVP)
+// - Immutable TripRequests represent planning intent
+// - Budget logic is deterministic and external to AI
+// - Claude-generated content stored but never trusted for calculations
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+/// Travel style affects budget allocation percentages
+/// MVP: Only BUDGET and BALANCED supported
+enum TravelStyle {
+  BUDGET   // Cost-conscious travelers
+  BALANCED // Mix of comfort and value
+}
+
+/// Types of user interactions tracked for analytics
+/// MVP: Basic tracking for future personalization
+enum InteractionType {
+  VIEW_TRIP_OPTION    // User viewed a trip option
+  EXPAND_EXPLANATION  // User expanded AI explanation
+  CLICK_BOOK_FLIGHT   // User clicked flight booking link
+  CLICK_BOOK_HOTEL    // User clicked hotel booking link
+  CHANGE_HOTEL        // User selected different hotel option
+}
+
+// =============================================================================
+// MODELS
+// =============================================================================
+
+/// User model for tracking anonymous users
+/// MVP: Anonymous users only - no authentication
+/// FUTURE: Will support authenticated users with preferences
+model User {
+  id                 String   @id @default(uuid()) @db.Uuid
+  createdAt          DateTime @default(now())
+  lastSeenAt         DateTime @updatedAt
+
+  // FUTURE: Personalization fields - inactive for MVP
+  // These will be populated by ML models analyzing user behavior
+  inferredBudgetBand String?  // e.g., "low", "medium", "high"
+  confidenceScore    Float    @default(0) // 0-1 confidence in inferred preferences
+
+  // Relations
+  tripRequests       TripRequest[]
+  interactionEvents  InteractionEvent[]
+}
+
+/// Represents one immutable travel planning request
+/// Core entity that captures user's travel intent
+/// Each request can generate 2-3 TripOptions
+model TripRequest {
+  id           String      @id @default(uuid()) @db.Uuid
+
+  // User association (nullable for anonymous users)
+  userId       String?     @db.Uuid
+  user         User?       @relation(fields: [userId], references: [id])
+
+  // Travel details
+  originCity   String      // Where the user is traveling from
+  destination  String?     // Nullable: user may want suggestions
+  startDate    DateTime?   // Nullable: flexible dates
+  endDate      DateTime?   // Nullable: flexible dates
+  numberOfDays Int         // Trip duration in days
+
+  // Budget (stored in cents to avoid floating-point issues)
+  budgetTotal  Int         // Total budget in cents (e.g., 100000 = $1,000)
+  travelStyle  TravelStyle // Determines budget allocation percentages
+
+  createdAt    DateTime    @default(now())
+
+  // Relations
+  tripOptions  TripOption[]
+
+  @@index([userId])
+}
+
+/// A generated travel option for a TripRequest
+/// Each TripRequest generates 2-3 of these
+/// Contains AI-generated content (explanation, itinerary)
+model TripOption {
+  id              String   @id @default(uuid()) @db.Uuid
+
+  // Parent relation
+  tripRequestId   String   @db.Uuid
+  tripRequest     TripRequest @relation(fields: [tripRequestId], references: [id], onDelete: Cascade)
+
+  // Option details
+  destination     String   // The destination for this option
+
+  // Cost breakdown (all in cents)
+  totalCost       Int      // Sum of flight + hotel costs
+  remainingBudget Int      // budgetTotal - totalCost (for activities)
+
+  // AI-generated content (stored but not trusted for calculations)
+  score           Float    // Option ranking score (0-1)
+  explanation     String   @db.Text // Claude-generated explanation
+  itineraryJson   Json     // Structured itinerary data
+
+  createdAt       DateTime @default(now())
+
+  // Relations (1:1 with FlightOption and HotelOption)
+  flightOption    FlightOption?
+  hotelOption     HotelOption?
+  interactionEvents InteractionEvent[]
+
+  @@index([tripRequestId])
+}
+
+/// Flight booking option for a TripOption
+/// Exactly one FlightOption per TripOption (1:1 relation)
+model FlightOption {
+  id            String   @id @default(uuid()) @db.Uuid
+
+  // 1:1 relation with TripOption (unique constraint enforces this)
+  tripOptionId  String   @unique @db.Uuid
+  tripOption    TripOption @relation(fields: [tripOptionId], references: [id], onDelete: Cascade)
+
+  // Flight details
+  provider      String   // Airline or booking provider name
+  price         Int      // Price in cents
+  departureTime DateTime // Outbound flight departure
+  returnTime    DateTime // Return flight departure
+  deepLink      String   // Direct booking URL
+
+  createdAt     DateTime @default(now())
+}
+
+/// Hotel booking option for a TripOption
+/// Exactly one HotelOption per TripOption (1:1 relation)
+model HotelOption {
+  id           String   @id @default(uuid()) @db.Uuid
+
+  // 1:1 relation with TripOption (unique constraint enforces this)
+  tripOptionId String   @unique @db.Uuid
+  tripOption   TripOption @relation(fields: [tripOptionId], references: [id], onDelete: Cascade)
+
+  // Hotel details
+  name         String   // Hotel name
+  priceTotal   Int      // Total price for entire stay in cents
+  rating       Float?   // Star rating (nullable if unavailable)
+  deepLink     String   // Direct booking URL
+
+  createdAt    DateTime @default(now())
+}
+
+/// Tracks user interactions for analytics and future personalization
+/// MVP: Basic event logging
+/// FUTURE: Used by ML models to infer user preferences
+model InteractionEvent {
+  id           String          @id @default(uuid()) @db.Uuid
+
+  // Optional associations (user may be anonymous, event may not be trip-specific)
+  userId       String?         @db.Uuid
+  user         User?           @relation(fields: [userId], references: [id])
+
+  tripOptionId String?         @db.Uuid
+  tripOption   TripOption?     @relation(fields: [tripOptionId], references: [id], onDelete: SetNull)
+
+  // Event data
+  eventType    InteractionType
+  metadata     Json?           // Additional event-specific data
+
+  createdAt    DateTime        @default(now())
+
+  @@index([userId])
+  @@index([tripOptionId])
+  @@index([eventType])
+}
+
+/// Configuration for budget allocation by travel style
+/// Deterministic percentages - not AI-generated
+/// Note: Percentages may not sum to 100% - remainder is for activities/discretionary
+model BudgetConfig {
+  id          String      @id @default(uuid()) @db.Uuid
+
+  // Unique per travel style (only one config per style)
+  travelStyle TravelStyle @unique
+
+  // Budget allocation percentages (as decimals, e.g., 0.35 = 35%)
+  flightPct   Float       // Percentage of budget for flights
+  hotelPct    Float       // Percentage of budget for hotels
+  bufferPct   Float       // Emergency/buffer percentage
+
+  createdAt   DateTime    @default(now())
+}
