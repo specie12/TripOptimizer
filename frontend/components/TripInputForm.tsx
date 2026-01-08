@@ -63,7 +63,7 @@ export default function TripInputForm() {
             setFormData({ ...formData, originCity: e.target.value })
           }
           placeholder="e.g., New York"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg bg-white text-gray-900"
         />
         {errors.originCity && (
           <p className="mt-1 text-sm text-red-600">{errors.originCity}</p>
@@ -90,7 +90,7 @@ export default function TripInputForm() {
               numberOfDays: parseInt(e.target.value) || 1,
             })
           }
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg bg-white text-gray-900"
         />
         {errors.numberOfDays && (
           <p className="mt-1 text-sm text-red-600">{errors.numberOfDays}</p>
@@ -121,7 +121,7 @@ export default function TripInputForm() {
                 budgetTotal: parseInt(e.target.value) || 100,
               })
             }
-            className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+            className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg bg-white text-gray-900"
           />
         </div>
         {errors.budgetTotal && (
@@ -135,7 +135,7 @@ export default function TripInputForm() {
           Travel style
         </label>
         <div className="space-y-3">
-          <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
+          <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors bg-white">
             <input
               type="radio"
               name="travelStyle"
@@ -150,14 +150,14 @@ export default function TripInputForm() {
               className="w-4 h-4 text-blue-600"
             />
             <div className="ml-3">
-              <span className="font-medium">Budget-friendly</span>
+              <span className="font-medium text-gray-900">Budget-friendly</span>
               <p className="text-sm text-gray-500">
                 Maximize savings, prioritize value
               </p>
             </div>
           </label>
 
-          <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
+          <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors bg-white">
             <input
               type="radio"
               name="travelStyle"
@@ -172,7 +172,7 @@ export default function TripInputForm() {
               className="w-4 h-4 text-blue-600"
             />
             <div className="ml-3">
-              <span className="font-medium">Balanced</span>
+              <span className="font-medium text-gray-900">Balanced</span>
               <p className="text-sm text-gray-500">
                 Mix of comfort and value
               </p>
