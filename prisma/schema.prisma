@@ -47,16 +47,18 @@ enum InteractionType {
 
 /// User model for tracking anonymous users
 /// MVP: Anonymous users only - no authentication
-/// FUTURE: Will support authenticated users with preferences
+/// STEP 5: Supports passive personalization via inferred preferences
 model User {
   id                 String   @id @default(uuid()) @db.Uuid
   createdAt          DateTime @default(now())
   lastSeenAt         DateTime @updatedAt
 
-  // FUTURE: Personalization fields - inactive for MVP
-  // These will be populated by ML models analyzing user behavior
-  inferredBudgetBand String?  // e.g., "low", "medium", "high"
-  confidenceScore    Float    @default(0) // 0-1 confidence in inferred preferences
+  // Personalization fields (STEP 5)
+  // Populated by analyzing user behavior - used for tie-breaking only
+  inferredBudgetBand   String?  // e.g., "low", "medium", "high"
+  confidenceScore      Float    @default(0) // 0-1 confidence in inferred preferences
+  totalInteractions    Int      @default(0) // Count of all interactions for confidence calc
+  inferredPreferences  Json?    // { budgetSensitivity, comfortPreference, destinationStyles }
 
   // Relations
   tripRequests       TripRequest[]

@@ -26,7 +26,11 @@ import {
   saveTripOptions,
   ScoredTripData,
 } from '../services/trip.service';
-import { scoreTripOptions, ScoringResult } from '../scoring';
+import { scoreTripOptionsWithPersonalization, ScoringResult } from '../scoring';
+import { getUserPreferences, PersonalizationContext } from '../personalization';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 const router = Router();
 
@@ -82,9 +86,32 @@ router.post(
 
       // Step 5: Convert to scoring format and score
       const scoringCandidates = candidates.map(toScoringCandidate);
-      const { results: scoredResults, rejectedOverBudget } = scoreTripOptions(scoringCandidates);
 
-      console.log(`Scored ${scoredResults.length} candidates, rejected ${rejectedOverBudget.length} over budget`);
+      // Load user preferences for personalization (if user provided)
+      let personalizationContext: PersonalizationContext | null = null;
+      if (requestBody.userId) {
+        const user = await prisma.user.findUnique({
+          where: { id: requestBody.userId },
+        });
+        if (user) {
+          const preferences = await getUserPreferences(requestBody.userId);
+          personalizationContext = {
+            userId: requestBody.userId,
+            preferences,
+            confidenceScore: user.confidenceScore,
+          };
+          console.log(`Loaded user preferences (confidence: ${user.confidenceScore.toFixed(2)})`);
+        }
+      }
+
+      // Score with optional personalization
+      const { results: scoredResults, rejectedOverBudget, personalizationApplied } =
+        scoreTripOptionsWithPersonalization(scoringCandidates, personalizationContext);
+
+      console.log(
+        `Scored ${scoredResults.length} candidates, rejected ${rejectedOverBudget.length} over budget` +
+        (personalizationApplied ? ' (personalization applied)' : '')
+      );
 
       if (scoredResults.length === 0) {
         const response: ApiErrorResponse = {

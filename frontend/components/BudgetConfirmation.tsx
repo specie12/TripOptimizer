@@ -94,12 +94,12 @@ export default function BudgetConfirmation({
       </button>
 
       {/* Back Link */}
-      <button
-        onClick={() => router.back()}
-        className="mt-4 text-gray-500 hover:text-gray-700 text-sm"
+      <a
+        href={`/?originCity=${encodeURIComponent(originCity)}&days=${numberOfDays}&budget=${budgetTotal}&style=${travelStyle}`}
+        className="mt-4 text-gray-500 hover:text-gray-700 text-sm inline-block"
       >
         &#8592; Change trip details
-      </button>
+      </a>
     </div>
   );
 }

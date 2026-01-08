@@ -35,6 +35,14 @@ import {
   buildScoringContext,
 } from './scoring.utils';
 
+import {
+  PersonalizationContext,
+  PersonalizedScoringResult,
+  applyPersonalization,
+  PersonalizationAdjustment,
+  CONFIDENCE_THRESHOLDS,
+} from '../personalization';
+
 // Re-export types and config for convenience
 export * from './scoring.types';
 export * from './scoring.config';
@@ -191,4 +199,110 @@ export function getTopScoredOptions(
 ): ScoringResult[] {
   const { results } = scoreTripOptions(candidates);
   return results.slice(0, topN);
+}
+
+/**
+ * Extended batch scoring result with personalization data
+ */
+export interface PersonalizedBatchScoringResult extends BatchScoringResult {
+  /** Personalization adjustments applied (for logging only, never exposed in API) */
+  personalizationApplied: boolean;
+  /** Adjustment details for debugging (internal use only) */
+  adjustments?: PersonalizationAdjustment[];
+}
+
+/**
+ * Scores multiple trip option candidates with optional personalization
+ *
+ * CRITICAL: Personalization is ONLY applied when:
+ * 1. User has confidenceScore >= 0.3
+ * 2. Candidates are within ±0.03 score proximity
+ * 3. Maximum adjustment is capped at ±5%
+ *
+ * The returned finalScore is ALWAYS the original deterministic score.
+ * Personalization only affects the ORDER of results, never the displayed scores.
+ *
+ * @param candidates - Array of trip options to score
+ * @param personalizationContext - Optional user preferences and confidence
+ * @returns Batch scoring result with optional personalization applied to ordering
+ */
+export function scoreTripOptionsWithPersonalization(
+  candidates: TripOptionCandidate[],
+  personalizationContext?: PersonalizationContext | null
+): PersonalizedBatchScoringResult {
+  if (candidates.length === 0) {
+    return {
+      results: [],
+      rejectedOverBudget: [],
+      context: { minHotelValue: 0, maxHotelValue: 0 },
+      personalizationApplied: false,
+    };
+  }
+
+  // Separate valid and over-budget candidates
+  const validCandidates: TripOptionCandidate[] = [];
+  const rejectedOverBudget: string[] = [];
+
+  for (const candidate of candidates) {
+    if (isWithinBudget(candidate)) {
+      validCandidates.push(candidate);
+    } else {
+      rejectedOverBudget.push(candidate.id);
+    }
+  }
+
+  // Build context from valid candidates only
+  const context = buildScoringContext(validCandidates);
+
+  // Score each valid candidate
+  const results: PersonalizedScoringResult[] = validCandidates.map((candidate) => {
+    const result = scoreTripOption(candidate, context);
+    // Attach candidate data for personalization calculations
+    return {
+      ...result,
+      candidate,
+    };
+  });
+
+  // Check if personalization should be applied
+  const shouldPersonalize =
+    personalizationContext &&
+    personalizationContext.preferences &&
+    personalizationContext.confidenceScore >= CONFIDENCE_THRESHOLDS.MINIMUM;
+
+  if (shouldPersonalize) {
+    // Apply personalization (only affects ordering within close score bands)
+    const { results: personalizedResults, adjustments } = applyPersonalization(
+      results,
+      personalizationContext
+    );
+
+    // Strip candidate data from results (not needed in response)
+    const cleanResults: ScoringResult[] = personalizedResults.map(
+      ({ candidate, personalizedScore, ...rest }) => rest
+    );
+
+    return {
+      results: cleanResults,
+      rejectedOverBudget,
+      context,
+      personalizationApplied: true,
+      adjustments,
+    };
+  }
+
+  // No personalization - sort by original score
+  results.sort((a, b) => b.finalScore - a.finalScore);
+
+  // Strip candidate data from results
+  const cleanResults: ScoringResult[] = results.map(
+    ({ candidate, personalizedScore, ...rest }) => rest
+  );
+
+  return {
+    results: cleanResults,
+    rejectedOverBudget,
+    context,
+    personalizationApplied: false,
+  };
 }

@@ -6,6 +6,7 @@
 
 import express, { Application } from 'express';
 import tripRoutes from './routes/trip.routes';
+import interactionRoutes from './routes/interaction.routes';
 import { errorHandler } from './middleware/validation';
 
 // Create Express app
@@ -27,6 +28,7 @@ app.use(express.json());
 
 // Routes
 app.use('/trip', tripRoutes);
+app.use('/interaction', interactionRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -36,6 +38,9 @@ app.get('/', (req, res) => {
     endpoints: {
       'POST /trip/generate': 'Generate trip options',
       'GET /trip/health': 'Health check',
+      'POST /interaction/track': 'Track user interaction',
+      'POST /interaction/user': 'Create anonymous user',
+      'GET /interaction/user/:id': 'Get user info',
     },
   });
 });
@@ -54,8 +59,10 @@ app.listen(PORT, () => {
 ║  Server running on: http://localhost:${PORT}                 ║
 ║                                                           ║
 ║  Endpoints:                                               ║
-║    POST /trip/generate  - Generate trip options           ║
-║    GET  /trip/health    - Health check                    ║
+║    POST /trip/generate       - Generate trip options      ║
+║    GET  /trip/health         - Health check               ║
+║    POST /interaction/track   - Track user interaction     ║
+║    POST /interaction/user    - Create anonymous user      ║
 ║                                                           ║
 ║  Environment:                                             ║
 ║    MOCK_CLAUDE: ${process.env.MOCK_CLAUDE === 'true' ? 'true (using mock responses)' : 'false (using real API)'}

@@ -4,13 +4,17 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { TripFormData } from '@/lib/types';
 
-export default function TripInputForm() {
+interface TripInputFormProps {
+  initialValues?: Partial<TripFormData>;
+}
+
+export default function TripInputForm({ initialValues }: TripInputFormProps) {
   const router = useRouter();
   const [formData, setFormData] = useState<TripFormData>({
-    originCity: '',
-    numberOfDays: 5,
-    budgetTotal: 2000,
-    travelStyle: 'BALANCED',
+    originCity: initialValues?.originCity || '',
+    numberOfDays: initialValues?.numberOfDays || 5,
+    budgetTotal: initialValues?.budgetTotal || 2000,
+    travelStyle: initialValues?.travelStyle || 'BALANCED',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 

@@ -372,3 +372,59 @@ Track only:
 4. Notes on how trust is reinforced in the UI
 
 ---
+
+## Prompt 5: Passive Personalization (STEP 5)
+
+**Date:** 2026-01-08
+
+**Context:** Senior backend engineer implementing STEP 5 of MVP. The system currently supports anonymous users and already tracks InteractionEvent data.
+
+**Goal:** Implement passive, low-risk personalization WITHOUT adding user accounts or changing core scoring logic.
+
+### Non-Negotiable Rules
+
+1. Personalization must be passive and reversible
+2. No personalization until confidenceScore >= 0.3
+3. Core scoring logic (Step 2) must NOT change
+4. Personalization may only affect tie-breaking or minor ordering
+5. No UI copy may mention personalization
+
+### Data Available
+
+- User (anonymous)
+- InteractionEvent
+- TripRequest
+- TripOption
+
+### Signals to Implement
+
+1. Budget Sensitivity
+2. Comfort Preference
+3. Destination Style (simple clustering)
+
+### Implementation Tasks
+
+1. Create a lightweight user preference inference module
+2. Increment confidenceScore slowly based on repeated behavior
+3. Store inferred preferences on User (no new tables)
+4. Apply personalization ONLY when:
+   - Scores are very close (±0.03)
+   - confidenceScore >= 0.3
+5. Cap personalization influence to ±5%
+
+### Constraints
+
+- Do NOT change finalScore calculation
+- Do NOT add new schemas
+- Do NOT expose personalization in API response
+- Do NOT ask the user questions
+- Do NOT overfit or guess aggressively
+
+### Expected Output
+
+1. Preference inference logic
+2. Tie-breaking adjustment logic
+3. Example scenario
+4. Guardrail notes
+
+---
