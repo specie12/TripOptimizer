@@ -7,6 +7,7 @@
 import express, { Application } from 'express';
 import tripRoutes from './routes/trip.routes';
 import interactionRoutes from './routes/interaction.routes';
+import parsingRoutes from './routes/parsing.routes';
 import { errorHandler } from './middleware/validation';
 
 // Create Express app
@@ -29,6 +30,7 @@ app.use(express.json());
 // Routes
 app.use('/trip', tripRoutes);
 app.use('/interaction', interactionRoutes);
+app.use('/parse', parsingRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -41,6 +43,8 @@ app.get('/', (req, res) => {
       'POST /interaction/track': 'Track user interaction',
       'POST /interaction/user': 'Create anonymous user',
       'GET /interaction/user/:id': 'Get user info',
+      'POST /parse/booking': 'Parse booking content (AI extraction)',
+      'GET /parse/health': 'Parsing service health check',
     },
   });
 });
@@ -63,6 +67,8 @@ app.listen(PORT, () => {
 ║    GET  /trip/health         - Health check               ║
 ║    POST /interaction/track   - Track user interaction     ║
 ║    POST /interaction/user    - Create anonymous user      ║
+║    POST /parse/booking       - Parse booking content      ║
+║    GET  /parse/health        - Parsing health check       ║
 ║                                                           ║
 ║  Environment:                                             ║
 ║    MOCK_CLAUDE: ${process.env.MOCK_CLAUDE === 'true' ? 'true (using mock responses)' : 'false (using real API)'}

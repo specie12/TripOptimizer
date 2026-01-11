@@ -486,3 +486,152 @@ Track only:
 4. Future extensibility notes
 
 ---
+
+## Prompt 7: AI Parsing Agent (STEP 7)
+
+**Date:** 2026-01-11
+
+**Context:** Senior backend engineer implementing STEP 7. All previous steps (1-6) complete. System has working trip generation, scoring, personalization, and monetization.
+
+**Goal:** Create a conservative AI parsing agent that extracts structured travel booking data from unstructured inputs (emails, PDFs, plain text). Agent follows "null over guess" philosophy.
+
+### Non-Negotiable Rules
+
+1. **NEVER FABRICATE** - If information is not explicitly stated, return null
+2. **VERBATIM EXTRACTION** - Extract exact wording for text fields (instructions, notes)
+3. **JSON ONLY** - Return only valid JSON, no prose or explanations
+4. **PARTIAL IS OK** - Partial extraction preferred over errors or guessing
+5. This is a PARSING agent only - it does NOT plan trips
+
+### Target JSON Schema
+
+```typescript
+{
+  vendor: {
+    name: string | null,           // Exact vendor name
+    category: VendorCategory,      // FLIGHT | HOTEL | CAR | ACTIVITY | OTHER
+    brandConfidence: number        // 0-1, how confident in vendor identification
+  },
+  booking: {
+    confirmationNumber: string | null,
+    bookingDate: string | null,    // ISO format if parseable
+    status: BookingStatus          // CONFIRMED | PENDING | CANCELLED
+  },
+  contact: {
+    phone: string | null,
+    email: string | null,
+    whatsapp: string | null,
+    website: string | null
+  },
+  location: {
+    address: string | null,
+    city: string | null,
+    country: string | null
+  },
+  timing: {
+    startDateTime: string | null,  // ISO format
+    endDateTime: string | null,    // ISO format
+    checkInTime: string | null,
+    checkOutTime: string | null
+  },
+  instructions: {
+    checkIn: string | null,        // VERBATIM from source
+    specialNotes: string | null    // VERBATIM from source
+  },
+  sourceMeta: {
+    documentType: DocumentType,    // EMAIL | PDF | TEXT
+    language: string | null        // ISO 639-1 code
+  }
+}
+```
+
+### Tech Stack
+
+- Node.js + TypeScript
+- Claude API (claude-3-haiku for cost efficiency)
+- Express routes following existing patterns
+- Mock mode support (MOCK_CLAUDE=true)
+
+### Implementation Tasks
+
+1. Create types file:
+   - `VendorCategory`, `BookingStatus`, `DocumentType` enums
+   - `ParsedBookingData` interface
+   - `ParseBookingRequest`, `ParseBookingResponse` types
+
+2. Create validation middleware:
+   - Max content: 100KB
+   - Min content: 10 characters
+   - Required: content field
+   - Optional: documentTypeHint, userId
+
+3. Create parsing service:
+   - `parseBookingContent()` - Main extraction function
+   - `buildParsingPrompt()` - Conservative prompt with anti-hallucination measures
+   - `normalizeExtractedData()` - Validate Claude's JSON response
+   - `calculateExtractionConfidence()` - Overall confidence score
+   - `generateMockParsedData()` - Mock mode for development
+
+4. Create routes:
+   - `POST /parse/booking` - Parse unstructured content
+   - `GET /parse/health` - Health check
+
+5. Register routes in server.ts
+
+### Anti-Hallucination Prompt Design
+
+The parsing prompt MUST include:
+- Explicit null instructions ("If not explicitly stated, return null")
+- Verbatim extraction requirement for instructions fields
+- Examples showing correct partial extraction
+- JSON-only output constraint
+- Confidence scoring that forces uncertainty quantification
+- Document type hint for context without forcing assumptions
+
+### API Design
+
+**POST /parse/booking**
+
+Request:
+```json
+{
+  "content": "Your flight confirmation for Delta Airlines...",
+  "documentTypeHint": "EMAIL",
+  "userId": "optional-uuid"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": { /* ParsedBookingData */ },
+  "confidence": 0.72,
+  "warnings": ["End time not detected"],
+  "meta": {
+    "processingTimeMs": 823,
+    "modelUsed": "claude-3-haiku-20240307",
+    "mockMode": false
+  }
+}
+```
+
+### Constraints
+
+- Do NOT fabricate ANY data
+- Do NOT add trip planning logic
+- Do NOT modify scoring or personalization
+- Do NOT add new database tables
+- Do NOT return prose or explanations in API response
+- Do NOT guess missing fields
+
+### Expected Output
+
+1. `src/types/parsing.types.ts` - Type definitions
+2. `src/middleware/parsing.validation.ts` - Input validation
+3. `src/services/parsing.service.ts` - Claude parsing logic
+4. `src/routes/parsing.routes.ts` - API routes
+5. Modified `src/server.ts` - Route registration
+6. Example request/response for testing
+
+---
