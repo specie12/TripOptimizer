@@ -7,6 +7,7 @@ import { TripOptionResponse } from '@/lib/types';
 import { formatCurrency, dollarsToCents } from '@/lib/formatters';
 import { trackTripView } from '@/lib/tracking';
 import TripCard from '@/components/TripCard';
+import ProPlanningUpsell from '@/components/monetization/ProPlanningUpsell';
 
 function ResultsContent() {
   const searchParams = useSearchParams();
@@ -103,15 +104,22 @@ function ResultsContent() {
 
       {/* Trip Options */}
       {!loading && !error && tripOptions.length > 0 && (
-        <div className="space-y-6">
-          {tripOptions.map((option) => (
-            <TripCard
-              key={option.id}
-              tripOption={option}
-              budgetTotal={budgetCents}
-            />
-          ))}
-        </div>
+        <>
+          <div className="space-y-6">
+            {tripOptions.map((option) => (
+              <TripCard
+                key={option.id}
+                tripOption={option}
+                budgetTotal={budgetCents}
+              />
+            ))}
+          </div>
+
+          {/* Pro Planning Upsell - AFTER results are shown */}
+          <div className="mt-8">
+            <ProPlanningUpsell source="results_page" />
+          </div>
+        </>
       )}
 
       {/* No Results */}

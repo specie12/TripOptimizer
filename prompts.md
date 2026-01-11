@@ -428,3 +428,61 @@ Track only:
 4. Guardrail notes
 
 ---
+
+## Prompt 6: Monetization (STEP 6)
+
+**Date:** 2026-01-11
+
+**Context:** Senior product + frontend engineer implementing STEP 6 for a budget-first travel planning MVP. The system already generates trusted trip plans.
+
+**Goal:** Introduce monetization WITHOUT affecting recommendation quality or user trust.
+
+### Non-Negotiable Principles
+
+1. Monetization must NOT influence trip ranking
+2. Core trip planning remains fully free
+3. Affiliate links must be disclosed clearly
+4. Paid features must add convenience, not advantage
+5. Monetization logic must be isolated from scoring logic
+
+### Monetization to Implement (MVP)
+
+1. Affiliate booking links
+   - Flight and hotel booking buttons
+   - Disclosure text (exact): "We may earn a commission if you book — at no extra cost to you."
+
+2. Optional "Pro Planning" upsell
+   - One-time purchase (not subscription)
+   - Appears AFTER trip results are shown
+   - Unlocks: More trip options, Hotel flexibility, Shareable itinerary
+
+### UX Requirements
+
+- Do NOT interrupt planning flow
+- Do NOT gate core results
+- Do NOT exaggerate benefits
+- Do NOT add urgency language
+
+### Implementation Tasks
+
+1. Add monetization UI components
+2. Add affiliate disclosure microcopy
+3. Stub Pro Planning upgrade flow (no payment processor needed)
+4. Ensure monetization code is separate from trip logic
+5. Provide example UI placement
+
+### Constraints
+
+- Do NOT change scoring or ranking
+- Do NOT hide disclosures
+- Do NOT add subscriptions yet
+- Do NOT add dark patterns
+
+### Expected Output
+
+1. UI component examples
+2. Placement notes
+3. Guardrails documentation
+4. Future extensibility notes
+
+---

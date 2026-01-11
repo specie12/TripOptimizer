@@ -6,6 +6,7 @@ import { formatCurrency } from '@/lib/formatters';
 import { trackExpandExplanation, trackViewDetails } from '@/lib/tracking';
 import WhyThisWorks from './WhyThisWorks';
 import TripDetails from './TripDetails';
+import AffiliateDisclosure from './monetization/AffiliateDisclosure';
 
 interface TripCardProps {
   tripOption: TripOptionResponse;
@@ -143,6 +144,9 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
             Book hotel
           </a>
         </div>
+
+        {/* Affiliate Disclosure */}
+        <AffiliateDisclosure className="text-center mb-2" />
 
         {/* Reassurance Copy */}
         <p className="text-sm text-gray-500 text-center">
