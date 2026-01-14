@@ -6,6 +6,8 @@ import { dollarsToCents } from '@/lib/formatters';
 
 interface BudgetConfirmationProps {
   originCity: string;
+  destination?: string;
+  startDate?: string;
   numberOfDays: number;
   budgetTotal: number; // In dollars
   travelStyle: 'BUDGET' | 'BALANCED';
@@ -13,11 +15,25 @@ interface BudgetConfirmationProps {
 
 export default function BudgetConfirmation({
   originCity,
+  destination,
+  startDate,
   numberOfDays,
   budgetTotal,
   travelStyle,
 }: BudgetConfirmationProps) {
   const router = useRouter();
+
+  // Format the date for display
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr + 'T00:00:00');
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
 
   const handleFindTrips = async () => {
     // Navigate to results with the same params
@@ -27,6 +43,14 @@ export default function BudgetConfirmation({
       budget: budgetTotal.toString(),
       style: travelStyle,
     });
+
+    // Add optional fields if provided
+    if (destination) {
+      params.set('destination', destination);
+    }
+    if (startDate) {
+      params.set('startDate', startDate);
+    }
 
     router.push(`/results?${params.toString()}`);
   };
@@ -42,6 +66,20 @@ export default function BudgetConfirmation({
             <span className="text-gray-600">From</span>
             <span className="font-semibold">{originCity}</span>
           </div>
+
+          {destination && (
+            <div className="flex justify-between items-center py-2 border-b border-gray-200">
+              <span className="text-gray-600">To</span>
+              <span className="font-semibold">{destination}</span>
+            </div>
+          )}
+
+          {startDate && (
+            <div className="flex justify-between items-center py-2 border-b border-gray-200">
+              <span className="text-gray-600">Departure</span>
+              <span className="font-semibold">{formatDate(startDate)}</span>
+            </div>
+          )}
 
           <div className="flex justify-between items-center py-2 border-b border-gray-200">
             <span className="text-gray-600">Duration</span>
@@ -95,7 +133,7 @@ export default function BudgetConfirmation({
 
       {/* Back Link */}
       <a
-        href={`/?originCity=${encodeURIComponent(originCity)}&days=${numberOfDays}&budget=${budgetTotal}&style=${travelStyle}`}
+        href={`/?originCity=${encodeURIComponent(originCity)}${destination ? `&destination=${encodeURIComponent(destination)}` : ''}${startDate ? `&startDate=${startDate}` : ''}&days=${numberOfDays}&budget=${budgetTotal}&style=${travelStyle}`}
         className="mt-4 text-gray-500 hover:text-gray-700 text-sm inline-block"
       >
         &#8592; Change trip details

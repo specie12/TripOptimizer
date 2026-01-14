@@ -10,6 +10,8 @@ function HomeContent() {
   // Read initial values from URL params (for "Change trip details" flow)
   const initialValues = {
     originCity: searchParams.get('originCity') || '',
+    destination: searchParams.get('destination') || '',
+    startDate: searchParams.get('startDate') || '',
     numberOfDays: parseInt(searchParams.get('days') || '') || 5,
     budgetTotal: parseInt(searchParams.get('budget') || '') || 2000,
     travelStyle: (searchParams.get('style') as 'BUDGET' | 'BALANCED') || 'BALANCED',

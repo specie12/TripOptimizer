@@ -12,6 +12,8 @@ export default function TripInputForm({ initialValues }: TripInputFormProps) {
   const router = useRouter();
   const [formData, setFormData] = useState<TripFormData>({
     originCity: initialValues?.originCity || '',
+    destination: initialValues?.destination || '',
+    startDate: initialValues?.startDate || '',
     numberOfDays: initialValues?.numberOfDays || 5,
     budgetTotal: initialValues?.budgetTotal || 2000,
     travelStyle: initialValues?.travelStyle || 'BALANCED',
@@ -46,6 +48,14 @@ export default function TripInputForm({ initialValues }: TripInputFormProps) {
       style: formData.travelStyle,
     });
 
+    // Add optional fields if provided
+    if (formData.destination?.trim()) {
+      params.set('destination', formData.destination.trim());
+    }
+    if (formData.startDate) {
+      params.set('startDate', formData.startDate);
+    }
+
     router.push(`/confirm?${params.toString()}`);
   };
 
@@ -72,6 +82,46 @@ export default function TripInputForm({ initialValues }: TripInputFormProps) {
         {errors.originCity && (
           <p className="mt-1 text-sm text-red-600">{errors.originCity}</p>
         )}
+      </div>
+
+      {/* Destination (Optional) */}
+      <div>
+        <label
+          htmlFor="destination"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          Where do you want to go? <span className="text-gray-400 font-normal">(optional)</span>
+        </label>
+        <input
+          type="text"
+          id="destination"
+          value={formData.destination || ''}
+          onChange={(e) =>
+            setFormData({ ...formData, destination: e.target.value })
+          }
+          placeholder="e.g., Paris (leave blank for suggestions)"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg bg-white text-gray-900"
+        />
+      </div>
+
+      {/* Travel Date */}
+      <div>
+        <label
+          htmlFor="startDate"
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
+          When do you want to travel?
+        </label>
+        <input
+          type="date"
+          id="startDate"
+          value={formData.startDate || ''}
+          onChange={(e) =>
+            setFormData({ ...formData, startDate: e.target.value })
+          }
+          min={new Date().toISOString().split('T')[0]}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg bg-white text-gray-900"
+        />
       </div>
 
       {/* Number of Days */}

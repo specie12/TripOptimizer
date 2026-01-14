@@ -13,6 +13,8 @@ function ResultsContent() {
   const searchParams = useSearchParams();
 
   const originCity = searchParams.get('originCity') || '';
+  const destination = searchParams.get('destination') || '';
+  const startDate = searchParams.get('startDate') || '';
   const days = parseInt(searchParams.get('days') || '5');
   const budgetDollars = parseInt(searchParams.get('budget') || '2000');
   const style = (searchParams.get('style') as 'BUDGET' | 'BALANCED') || 'BALANCED';
@@ -37,6 +39,8 @@ function ResultsContent() {
 
         const response = await generateTrip({
           originCity,
+          destination: destination || undefined,
+          startDate: startDate || undefined,
           numberOfDays: days,
           budgetTotal: budgetCents,
           travelStyle: style,
@@ -56,7 +60,7 @@ function ResultsContent() {
     }
 
     fetchTrips();
-  }, [originCity, days, budgetCents, style]);
+  }, [originCity, destination, startDate, days, budgetCents, style]);
 
   if (!originCity) {
     return (
@@ -74,10 +78,13 @@ function ResultsContent() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Trips from {originCity}
+          {destination
+            ? `Trips from ${originCity} to ${destination}`
+            : `Trips from ${originCity}`}
         </h1>
         <p className="text-gray-600">
           {days} days &middot; {formatCurrency(budgetCents)} budget
+          {startDate && ` &middot; Departing ${new Date(startDate + 'T00:00:00').toLocaleDateString()}`}
         </p>
       </div>
 
@@ -138,7 +145,7 @@ function ResultsContent() {
       {/* Back Link */}
       <div className="mt-8 text-center">
         <a
-          href={`/confirm?originCity=${encodeURIComponent(originCity)}&days=${days}&budget=${budgetDollars}&style=${style}`}
+          href={`/confirm?originCity=${encodeURIComponent(originCity)}${destination ? `&destination=${encodeURIComponent(destination)}` : ''}${startDate ? `&startDate=${startDate}` : ''}&days=${days}&budget=${budgetDollars}&style=${style}`}
           className="text-gray-500 hover:text-gray-700 text-sm"
         >
           &#8592; Back to confirmation

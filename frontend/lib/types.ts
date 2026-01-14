@@ -91,6 +91,8 @@ export interface ValidationError {
 
 export interface TripFormData {
   originCity: string;
+  destination?: string; // Optional - if not provided, system suggests destinations
+  startDate?: string; // Optional - ISO date string
   numberOfDays: number;
   budgetTotal: number; // In dollars (converted to cents when sending to API)
   travelStyle: 'BUDGET' | 'BALANCED';

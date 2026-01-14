@@ -8,6 +8,8 @@ function ConfirmContent() {
   const searchParams = useSearchParams();
 
   const originCity = searchParams.get('originCity') || '';
+  const destination = searchParams.get('destination') || '';
+  const startDate = searchParams.get('startDate') || '';
   const days = parseInt(searchParams.get('days') || '5');
   const budget = parseInt(searchParams.get('budget') || '2000');
   const style = (searchParams.get('style') as 'BUDGET' | 'BALANCED') || 'BALANCED';
@@ -28,6 +30,8 @@ function ConfirmContent() {
     <div className="py-8">
       <BudgetConfirmation
         originCity={originCity}
+        destination={destination}
+        startDate={startDate}
         numberOfDays={days}
         budgetTotal={budget}
         travelStyle={style}
