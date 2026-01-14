@@ -635,3 +635,151 @@ Response:
 6. Example request/response for testing
 
 ---
+
+## Prompt 8: AI Verification Agent (STEP 8)
+
+**Date:** 2026-01-11
+
+**Context:** Senior backend engineer implementing STEP 8. All previous steps complete. System has trip generation, scoring, personalization, monetization, and parsing agent.
+
+**Goal:** Create a conservative AI verification agent that checks existence and operational status of travel-related entities. Agent follows "UNKNOWN over guess" philosophy.
+
+### Non-Negotiable Rules
+
+1. **ONLY VERIFY** - Never create, suggest, or recommend alternatives
+2. **NEVER HALLUCINATE** - No replacements, no inventions
+3. **PREFER UNKNOWN** - If verification is uncertain, mark as UNKNOWN
+4. **JSON ONLY** - Return structured JSON, no markdown, no explanations
+5. **CONSERVATIVE & SKEPTICAL** - Verify only what can be confirmed
+
+### Entity Types to Verify
+
+- Hotel
+- Airline
+- Activity
+- Restaurant
+- Transportation provider
+
+### Input Format
+
+Structured object containing:
+- Name (required)
+- Address (optional)
+- City (optional)
+- Country (optional)
+- Website URL (optional)
+- Known dates (optional)
+
+### Verification Tasks
+
+For each entity, verify ONLY:
+1. Does this entity appear to exist?
+2. Does the website (if provided) resolve?
+3. Does the entity appear to still operate?
+4. Is there any obvious signal it is permanently closed?
+
+NOT required to verify:
+- Real-time availability
+- Prices
+- Schedules
+- Booking inventory
+
+### Target JSON Schema
+
+```typescript
+{
+  entityName: string | null,
+  verificationStatus: 'VERIFIED' | 'UNVERIFIED' | 'UNKNOWN',
+  signals: {
+    websiteResolves: boolean | null,
+    appearsOperational: boolean | null,
+    closureSignalDetected: boolean | null
+  },
+  confidence: number | null,  // 0-1, strength of signals
+  notes: string | null        // Short, factual, no speculation
+}
+```
+
+### Field Guidelines
+
+**verificationStatus:**
+- VERIFIED: Strong signals entity exists and operates
+- UNVERIFIED: Strong signals entity does NOT exist or is closed
+- UNKNOWN: Conflicting, weak, or missing signals
+
+**signals:**
+- websiteResolves: true ONLY if explicitly verifiable
+- appearsOperational: true ONLY if clearly indicated
+- closureSignalDetected: true ONLY if explicit closure signals exist
+
+**confidence:**
+- Number between 0 and 1
+- Reflects strength of signals, not certainty
+
+**notes:**
+- Short, factual
+- No speculation
+- No recommendations
+
+### Tech Stack
+
+- Node.js + TypeScript
+- Claude API (claude-3-haiku for cost efficiency)
+- Express routes following existing patterns
+- Mock mode support (MOCK_CLAUDE=true)
+
+### Implementation Tasks
+
+1. Create types file:
+   - `EntityType` enum
+   - `VerificationStatus` enum
+   - `VerificationSignals` interface
+   - `VerificationResult` interface
+   - `VerifyEntityRequest`, `VerifyEntityResponse` types
+
+2. Create validation middleware:
+   - Required: entityName (min 2 chars)
+   - Optional: entityType, address, city, country, website
+
+3. Create verification service:
+   - `verifyEntity()` - Main verification function
+   - `buildVerificationPrompt()` - Conservative prompt
+   - `normalizeVerificationResult()` - Validate response
+   - `generateMockVerification()` - Mock mode support
+
+4. Create routes:
+   - `POST /verify/entity` - Verify single entity
+   - `GET /verify/health` - Health check
+
+5. Register routes in server.ts
+
+### Error Handling
+
+- Insufficient data: Return UNKNOWN status with null signals
+- Conflicting signals: Prefer UNKNOWN, explain in notes
+- API errors: 500 with error details
+
+### Security & Safety
+
+- Do NOT browse creatively
+- Do NOT infer intent
+- Do NOT use prior knowledge unless explicitly present
+- Do NOT include marketing language
+
+### Constraints
+
+- Do NOT suggest alternatives
+- Do NOT fabricate data
+- Do NOT check real-time availability
+- Do NOT modify existing trip logic
+
+### Expected Output
+
+1. `src/types/verification.types.ts` - Type definitions
+2. `src/middleware/verification.validation.ts` - Input validation
+3. `src/services/verification.service.ts` - Claude verification logic
+4. `src/routes/verification.routes.ts` - API routes
+5. Modified `src/server.ts` - Route registration
+6. Example request/response for testing
+
+---
