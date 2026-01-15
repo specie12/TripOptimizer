@@ -8,6 +8,161 @@ An AI-powered travel agent that acts as both a **travel advisor** and a **person
 
 ---
 
+## Multi-Agent Architecture
+
+TripOptimizer employs a **multi-agent architecture** where a central orchestrator coordinates specialized AI agents, each responsible for a specific domain of the trip lifecycle.
+
+### Architecture Overview
+
+```
+                                    ┌─────────────────────┐
+                                    │   User Interface    │
+                                    └──────────┬──────────┘
+                                               │
+                                    ┌──────────▼──────────┐
+                                    │                     │
+                                    │  ORCHESTRATOR AGENT │
+                                    │  (Central Control)  │
+                                    │                     │
+                                    └──────────┬──────────┘
+                                               │
+              ┌────────────────┬───────────────┼───────────────┬────────────────┐
+              │                │               │               │                │
+    ┌─────────▼─────────┐ ┌────▼────┐ ┌────────▼────────┐ ┌────▼────┐ ┌─────────▼─────────┐
+    │                   │ │         │ │                 │ │         │ │                   │
+    │   BUDGET AGENT    │ │OPTIMIZER│ │  BOOKING AGENT  │ │ MONITOR │ │  EXCEPTION AGENT  │
+    │                   │ │  AGENT  │ │                 │ │  AGENT  │ │                   │
+    └───────────────────┘ └─────────┘ └─────────────────┘ └─────────┘ └───────────────────┘
+```
+
+### Agent Responsibilities
+
+#### 1. Orchestrator Agent (Central Coordinator)
+**Role:** Manages the entire trip lifecycle and coordinates all specialized agents
+
+**Responsibilities:**
+- Receives user requests and determines which agents to invoke
+- Maintains trip state across the planning-to-completion lifecycle
+- Routes tasks to appropriate specialized agents
+- Aggregates responses and resolves conflicts between agents
+- Manages agent execution order and dependencies
+- Provides unified response to user interface
+
+**Key Decisions:**
+- When to trigger re-optimization
+- How to handle conflicting agent recommendations
+- When to escalate to user for decisions
+- Priority ordering when multiple agents need resources
+
+#### 2. Budget Agent
+**Role:** Owns all financial aspects of the trip
+
+**Responsibilities:**
+- Initial budget allocation across 6 categories
+- Real-time spend tracking and remaining budget calculation
+- Budget reallocation when priorities change
+- Enforces hard budget constraints across all decisions
+- Provides budget health reports to orchestrator
+- Alerts when categories approach/exceed limits
+
+**Inputs:** Total budget, user priorities, spend records
+**Outputs:** Category allocations, remaining budgets, budget alerts
+
+#### 3. Optimization Agent
+**Role:** Continuously finds better options within constraints
+
+**Responsibilities:**
+- Monitors prices for unlocked items
+- Identifies savings opportunities (>10% threshold)
+- Generates alternative recommendations
+- Respects lock-down constraints
+- Balances optimization aggressiveness with user preferences
+- Ranks alternatives by value improvement
+
+**Inputs:** Current selections, price feeds, lock statuses, budget constraints
+**Outputs:** Optimization opportunities, alternative recommendations
+
+#### 4. Booking Agent
+**Role:** Manages the actual booking process
+
+**Responsibilities:**
+- Validates availability before booking
+- Executes bookings through integrated APIs
+- Handles booking confirmations and receipts
+- Manages booking modifications and cancellations
+- Extracts structured data from booking confirmations
+- Updates trip state with confirmed bookings
+
+**Inputs:** Selected options, user payment info, booking requests
+**Outputs:** Booking confirmations, booking failures, modification results
+
+#### 5. Monitoring Agent
+**Role:** Watches for changes that affect the trip
+
+**Responsibilities:**
+- Tracks price changes on watched items
+- Monitors flight schedule changes
+- Detects hotel availability changes
+- Watches for relevant alerts (weather, events, closures)
+- Triggers notifications for significant changes
+- Feeds data to optimization agent
+
+**Inputs:** Watched items, external feeds, alert sources
+**Outputs:** Change notifications, price updates, schedule alerts
+
+#### 6. Exception Agent
+**Role:** Handles disruptions and problems
+
+**Responsibilities:**
+- Manages cancellations and rebooking
+- Handles schedule conflicts
+- Processes refunds and credits
+- Resolves booking failures
+- Coordinates recovery from disruptions
+- Communicates issues to user with solutions
+
+**Inputs:** Exception events, current bookings, available alternatives
+**Outputs:** Resolution actions, rebooking options, refund status
+
+### Agent Communication Protocol
+
+```typescript
+interface AgentMessage {
+  messageId: string;
+  fromAgent: AgentType;
+  toAgent: AgentType;
+  messageType: 'REQUEST' | 'RESPONSE' | 'EVENT' | 'ALERT';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  payload: unknown;
+  correlationId?: string;  // Links related messages
+  timestamp: Date;
+}
+
+type AgentType =
+  | 'ORCHESTRATOR'
+  | 'BUDGET'
+  | 'OPTIMIZATION'
+  | 'BOOKING'
+  | 'MONITORING'
+  | 'EXCEPTION';
+```
+
+### Agent State Machine
+
+Each trip progresses through states, with different agents active at each stage:
+
+```
+PLANNING → OPTIMIZING → BOOKING → CONFIRMED → ACTIVE → COMPLETED
+    │          │           │          │          │
+    └── Budget Agent ──────┴──────────┘          │
+    └── Optimization Agent ───────────┴──────────┘
+                   └── Booking Agent ─┴──────────┘
+                              └── Monitoring Agent ┘
+                                        └── Exception Agent (on-demand)
+```
+
+---
+
 ## Executive Summary: Current State
 
 **TripOptimizer MVP is a budget-conscious flight + hotel matching engine** with:
@@ -56,6 +211,9 @@ An AI-powered travel agent that acts as both a **travel advisor** and a **person
 | Continuous Optimization | ❌ Missing | No price monitoring or re-planning |
 | Real API Integration | ❌ Missing | Mock data only |
 | Activities Planning | ❌ Missing | No tours, attractions, experiences |
+| Agent Infrastructure | ❌ Missing | No orchestrator or specialized agents |
+| Agent Communication | ❌ Missing | No inter-agent messaging system |
+| Trip State Machine | ❌ Missing | No lifecycle state management |
 
 ### Intended Flow vs. Current State
 
@@ -73,6 +231,79 @@ An AI-powered travel agent that acts as both a **travel advisor** and a **person
 ---
 
 ## Implementation Roadmap
+
+### Phase 0: Agent Framework Infrastructure
+**Goal:** Establish the foundational multi-agent architecture with orchestrator and agent base classes
+
+**Tasks:**
+- [ ] Define `AgentType` enum and `AgentMessage` interface
+- [ ] Create base `Agent` abstract class with common lifecycle methods
+- [ ] Implement `OrchestratorAgent` as central coordinator
+- [ ] Create agent registry for dynamic agent discovery
+- [ ] Implement inter-agent message bus (pub/sub pattern)
+- [ ] Define `TripState` enum and state machine transitions
+- [ ] Create `AgentContext` for shared state access
+- [ ] Add agent execution logging and tracing
+- [ ] Implement agent health checks and status reporting
+
+**Files to Create:**
+```
+src/agents/
+├── types.ts                    # AgentType, AgentMessage, AgentContext
+├── base.agent.ts               # Abstract Agent base class
+├── orchestrator.agent.ts       # Central orchestrator
+├── registry.ts                 # Agent registration and discovery
+├── message-bus.ts              # Inter-agent communication
+├── state-machine.ts            # Trip lifecycle state management
+├── budget.agent.ts             # Budget agent (stub)
+├── optimization.agent.ts       # Optimization agent (stub)
+├── booking.agent.ts            # Booking agent (stub)
+├── monitoring.agent.ts         # Monitoring agent (stub)
+└── exception.agent.ts          # Exception agent (stub)
+```
+
+**Agent Base Class:**
+```typescript
+abstract class Agent {
+  abstract readonly type: AgentType;
+  abstract readonly capabilities: string[];
+
+  abstract initialize(context: AgentContext): Promise<void>;
+  abstract handleMessage(message: AgentMessage): Promise<AgentMessage | null>;
+  abstract healthCheck(): Promise<AgentHealth>;
+
+  protected async sendMessage(to: AgentType, payload: unknown): Promise<void>;
+  protected async requestFromAgent<T>(to: AgentType, payload: unknown): Promise<T>;
+}
+```
+
+**Orchestrator Pattern:**
+```typescript
+class OrchestratorAgent extends Agent {
+  async planTrip(request: TripRequest): Promise<TripPlan> {
+    // 1. Ask Budget Agent to allocate budget
+    const allocation = await this.requestFromAgent<BudgetAllocation>(
+      'BUDGET',
+      { type: 'ALLOCATE', budget: request.budget, priorities: request.priorities }
+    );
+
+    // 2. Generate candidates within budget constraints
+    const candidates = await this.generateCandidates(allocation);
+
+    // 3. Ask Optimization Agent to rank candidates
+    const ranked = await this.requestFromAgent<RankedOptions>(
+      'OPTIMIZATION',
+      { type: 'RANK', candidates, constraints: allocation }
+    );
+
+    return { options: ranked.top3, allocation };
+  }
+}
+```
+
+**Estimated Scope:** Large (Foundation for all future phases)
+
+---
 
 ### Phase 1: Extended Budget Categories & Constraints
 **Goal:** Upgrade from 3 to 6 budget categories; add user priorities
@@ -365,15 +596,24 @@ model SpendRecord {
 
 | Priority | Phase | Features | Business Value |
 |----------|-------|----------|----------------|
-| **P0** | 1, 2 | Extended budget categories, Lock-down mechanism | Core CFO functionality |
-| **P1** | 3 | Activities integration | Complete trip planning |
-| **P2** | 5 | Spend tracking | Real-time budget management |
-| **P3** | 4 | API integration foundation | Production readiness |
-| **P4** | 6 | Continuous optimization | Proactive value delivery |
+| **P0** | 0 | Agent framework infrastructure | Foundation for AI-powered system |
+| **P1** | 1, 2 | Extended budget categories, Lock-down mechanism | Core CFO functionality |
+| **P2** | 3 | Activities integration | Complete trip planning |
+| **P3** | 5 | Spend tracking | Real-time budget management |
+| **P4** | 4 | API integration foundation | Production readiness |
+| **P5** | 6 | Continuous optimization | Proactive value delivery |
 
 ---
 
 ## Success Metrics
+
+### Phase 0 Complete When:
+- [ ] All 6 agent types defined with base class implementation
+- [ ] Orchestrator can coordinate requests between agents
+- [ ] Message bus enables async agent communication
+- [ ] Trip state machine manages lifecycle transitions
+- [ ] Agent health checks report status correctly
+- [ ] Existing services refactored to work through agent layer
 
 ### Phase 1 Complete When:
 - [ ] Users can allocate budget across 6 categories
@@ -411,6 +651,18 @@ model SpendRecord {
 
 ```
 src/
+├── agents/                    # NEW: Multi-agent architecture
+│   ├── types.ts               # AgentType, AgentMessage, AgentContext, AgentHealth
+│   ├── base.agent.ts          # Abstract Agent base class
+│   ├── orchestrator.agent.ts  # Central coordinator agent
+│   ├── budget.agent.ts        # Budget allocation and tracking agent
+│   ├── optimization.agent.ts  # Price monitoring and re-optimization agent
+│   ├── booking.agent.ts       # Booking execution agent
+│   ├── monitoring.agent.ts    # Change detection and alerting agent
+│   ├── exception.agent.ts     # Disruption handling agent
+│   ├── registry.ts            # Agent registration and discovery
+│   ├── message-bus.ts         # Inter-agent pub/sub communication
+│   └── state-machine.ts       # Trip lifecycle state transitions
 ├── config/
 │   ├── destinations.ts        # Existing
 │   ├── activities.ts          # NEW: Mock activity data
@@ -433,21 +685,22 @@ src/
 │   ├── interaction.routes.ts  # Existing
 │   ├── parsing.routes.ts      # Existing
 │   ├── verification.routes.ts # Existing
+│   ├── agent.routes.ts        # NEW: Agent status and control endpoints
 │   └── spend.routes.ts        # NEW: Spend tracking endpoints
 ├── scoring/                   # Existing (modified)
 ├── services/
-│   ├── budget.service.ts      # MODIFIED: 6 categories
-│   ├── candidate.service.ts   # Existing
-│   ├── claude.service.ts      # Existing
+│   ├── budget.service.ts      # MODIFIED: 6 categories, called by Budget Agent
+│   ├── candidate.service.ts   # Existing, called by Orchestrator
+│   ├── claude.service.ts      # Existing, used by all AI agents
 │   ├── interaction.service.ts # Existing
-│   ├── parsing.service.ts     # Existing
-│   ├── trip.service.ts        # Existing
-│   ├── verification.service.ts # Existing
+│   ├── parsing.service.ts     # Existing, used by Booking Agent
+│   ├── trip.service.ts        # MODIFIED: Delegates to Orchestrator Agent
+│   ├── verification.service.ts # Existing, used by Booking Agent
 │   ├── activity.service.ts    # NEW
 │   ├── lockdown.service.ts    # NEW
 │   ├── spend.service.ts       # NEW
-│   ├── optimization.service.ts # NEW
-│   └── notification.service.ts # NEW
+│   ├── optimization.service.ts # NEW, used by Optimization Agent
+│   └── notification.service.ts # NEW, used by Monitoring Agent
 ├── types/
 │   ├── api.types.ts           # Existing
 │   ├── parsing.types.ts       # Existing
@@ -457,7 +710,7 @@ src/
 │   ├── lockdown.types.ts      # NEW
 │   ├── spend.types.ts         # NEW
 │   └── optimization.types.ts  # NEW
-└── server.ts                  # Existing
+└── server.ts                  # MODIFIED: Initializes agent registry
 ```
 
 ---
