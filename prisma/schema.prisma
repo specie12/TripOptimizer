@@ -31,6 +31,16 @@ enum TravelStyle {
   BALANCED // Mix of comfort and value
 }
 
+/// Budget categories for 6-way budget allocation (Phase 1)
+enum BudgetCategory {
+  FLIGHT      // Airfare and flight-related costs
+  HOTEL       // Accommodation costs
+  ACTIVITY    // Tours, attractions, experiences
+  FOOD        // Meals and dining
+  TRANSPORT   // Ground transportation (car rental, trains, local)
+  CONTINGENCY // Emergency buffer and unexpected costs
+}
+
 /// Types of user interactions tracked for analytics
 /// MVP: Basic tracking for future personalization
 enum InteractionType {
@@ -86,10 +96,15 @@ model TripRequest {
   budgetTotal  Int         // Total budget in cents (e.g., 100000 = $1,000)
   travelStyle  TravelStyle // Determines budget allocation percentages
 
+  // Phase 1: User preferences and constraints
+  priorities   Json?       // { "flight": 1, "hotel": 2, "activities": 3, "food": 4, "transport": 5, "contingency": 6 }
+  constraints  Json?       // { "mustHave": [], "mustAvoid": [], "preferences": {} }
+
   createdAt    DateTime    @default(now())
 
   // Relations
   tripOptions  TripOption[]
+  budgetAllocations BudgetAllocation[]
 
   @@index([userId])
 }
@@ -189,17 +204,39 @@ model InteractionEvent {
 
 /// Configuration for budget allocation by travel style
 /// Deterministic percentages - not AI-generated
-/// Note: Percentages may not sum to 100% - remainder is for activities/discretionary
+/// Phase 1: Extended to support 6 budget categories
 model BudgetConfig {
   id          String      @id @default(uuid()) @db.Uuid
 
   // Unique per travel style (only one config per style)
   travelStyle TravelStyle @unique
 
-  // Budget allocation percentages (as decimals, e.g., 0.35 = 35%)
-  flightPct   Float       // Percentage of budget for flights
-  hotelPct    Float       // Percentage of budget for hotels
-  bufferPct   Float       // Emergency/buffer percentage
+  // Phase 1: 6-category budget allocation percentages (as decimals, e.g., 0.35 = 35%)
+  // NOTE: These should sum to ~1.0 (100%)
+  flightPct      Float       // Percentage for flights
+  hotelPct       Float       // Percentage for hotels
+  activityPct    Float       // Percentage for activities/attractions
+  foodPct        Float       // Percentage for meals
+  transportPct   Float       // Percentage for ground transportation
+  contingencyPct Float       // Emergency buffer percentage
 
   createdAt   DateTime    @default(now())
+}
+
+/// Tracks budget allocation per category for a trip request (Phase 1)
+/// Enables real-time budget tracking and spend monitoring
+model BudgetAllocation {
+  id              String         @id @default(uuid()) @db.Uuid
+  tripRequestId   String         @db.Uuid
+  tripRequest     TripRequest    @relation(fields: [tripRequestId], references: [id], onDelete: Cascade)
+
+  category        BudgetCategory // Which category this allocation is for
+  allocated       Int            // Amount allocated in cents
+  spent           Int            @default(0) // Amount spent so far in cents
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@unique([tripRequestId, category])
+  @@index([tripRequestId])
 }

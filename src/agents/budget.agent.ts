@@ -6,6 +6,8 @@
  * - Spend tracking and remaining budget calculation
  * - Budget constraint enforcement
  * - Budget health reports and alerts
+ *
+ * Phase 1: Integrated with budget.service.ts for 6-category allocation
  */
 
 import { Agent } from './base.agent';
@@ -16,6 +18,12 @@ import type {
   BudgetAllocationResponse,
   SpendRecordRequest,
 } from './types';
+import { TravelStyle } from '@prisma/client';
+import {
+  getExtendedBudgetConfig,
+  allocateExtendedBudget,
+} from '../services/budget.service';
+import type { BudgetPriorities } from '../types/budget.types';
 
 export class BudgetAgent extends Agent {
   readonly type = 'BUDGET' as const;
@@ -64,12 +72,12 @@ export class BudgetAgent extends Agent {
   }
 
   // ============================================
-  // BUDGET OPERATIONS (STUB)
+  // BUDGET OPERATIONS (Phase 1)
   // ============================================
 
   /**
-   * Allocate budget across categories
-   * TODO: Implement actual allocation logic in Phase 1
+   * Allocate budget across 6 categories with priority weighting (Phase 1)
+   * Uses budget.service.ts for actual allocation logic
    */
   private async allocateBudget(message: AgentMessage): Promise<void> {
     const request = message.payload as BudgetAllocationRequest;
@@ -79,22 +87,57 @@ export class BudgetAgent extends Agent {
       priorities: request.priorities,
     });
 
-    // STUB: Simple equal allocation for now
-    // In Phase 1, this will implement smart allocation based on priorities
-    const categories = ['flight', 'hotel', 'activity', 'food', 'transport', 'contingency'];
-    const perCategory = Math.floor(request.totalBudget / categories.length);
+    try {
+      // Get budget configuration (default to BALANCED if not specified)
+      const travelStyle: TravelStyle = 'BALANCED';
+      const config = await getExtendedBudgetConfig(travelStyle);
 
-    const allocations: Record<string, number> = {};
-    categories.forEach((category) => {
-      allocations[category] = perCategory;
-    });
+      // Convert priorities to proper format
+      const priorities = request.priorities as BudgetPriorities | undefined;
 
-    const response: BudgetAllocationResponse = {
-      allocations,
-      remaining: request.totalBudget - perCategory * categories.length,
-    };
+      // Allocate budget using service
+      const result = allocateExtendedBudget(request.totalBudget, config, priorities);
 
-    await this.respondToMessage(message, response);
+      // Convert ExtendedBudgetAllocation to response format
+      const allocations: Record<string, number> = {
+        flight: result.allocations.flight,
+        hotel: result.allocations.hotel,
+        activity: result.allocations.activity,
+        food: result.allocations.food,
+        transport: result.allocations.transport,
+        contingency: result.allocations.contingency,
+      };
+
+      const response: BudgetAllocationResponse = {
+        allocations,
+        remaining: result.remaining,
+      };
+
+      this.log('info', 'Budget allocated successfully', {
+        totalAllocated: result.totalAllocated,
+        allocations: allocations,
+      });
+
+      await this.respondToMessage(message, response);
+    } catch (error) {
+      this.log('error', 'Failed to allocate budget', error);
+
+      // Fallback to simple equal allocation
+      const categories = ['flight', 'hotel', 'activity', 'food', 'transport', 'contingency'];
+      const perCategory = Math.floor(request.totalBudget / categories.length);
+
+      const allocations: Record<string, number> = {};
+      categories.forEach((category) => {
+        allocations[category] = perCategory;
+      });
+
+      const response: BudgetAllocationResponse = {
+        allocations,
+        remaining: request.totalBudget - perCategory * categories.length,
+      };
+
+      await this.respondToMessage(message, response);
+    }
   }
 
   /**
