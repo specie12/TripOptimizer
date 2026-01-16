@@ -14,7 +14,7 @@ import {
   TripOptionResponse,
   ApiErrorResponse,
 } from '../types/api.types';
-import { getBudgetConfig, allocateBudget } from '../services/budget.service';
+import { getBudgetConfig, allocateBudget, getExtendedBudgetConfig, allocateExtendedBudget } from '../services/budget.service';
 import {
   generateCandidates,
   toScoringCandidate,
@@ -29,6 +29,7 @@ import {
 import { scoreTripOptionsWithPersonalization, ScoringResult } from '../scoring';
 import { getUserPreferences, PersonalizationContext } from '../personalization';
 import { PrismaClient } from '@prisma/client';
+import { generateActivities, createActivityOptions } from '../services/activity.service';
 
 const prisma = new PrismaClient();
 
@@ -43,13 +44,14 @@ const router = Router();
  * 1. Validate input
  * 2. Create TripRequest in DB
  * 3. Get BudgetConfig for travel style
- * 4. Allocate budget deterministically
+ * 4. Allocate budget deterministically (Phase 1: 6 categories)
  * 5. Generate candidates (mock flights + hotels)
- * 6. Score candidates using existing scorer (NO AI)
- * 7. Select top 3 options
- * 8. Generate explanations with Claude (text only)
- * 9. Save results to DB
- * 10. Return response
+ * 6. Generate activities (Phase 3: based on activity budget)
+ * 7. Score candidates using existing scorer (NO AI)
+ * 8. Select top 3 options
+ * 9. Generate explanations with Claude (text only)
+ * 10. Save results to DB (including activities)
+ * 11. Return response
  */
 router.post(
   '/generate',
@@ -62,17 +64,27 @@ router.post(
       const tripRequest = await createTripRequest(requestBody);
       console.log(`Created TripRequest: ${tripRequest.id}`);
 
-      // Step 2: Get budget configuration
-      const budgetConfig = await getBudgetConfig(
+      // Step 2: Get budget configuration (Phase 1: Extended 6-category)
+      const extendedBudgetConfig = await getExtendedBudgetConfig(
         requestBody.travelStyle as TravelStyle
       );
 
-      // Step 3: Allocate budget deterministically
-      const allocation = allocateBudget(requestBody.budgetTotal, budgetConfig);
-      console.log('Budget allocation:', allocation);
+      // Step 3: Allocate budget deterministically (Phase 1: 6 categories)
+      const extendedAllocation = allocateExtendedBudget(
+        requestBody.budgetTotal,
+        extendedBudgetConfig
+      );
+      console.log('Extended budget allocation:', extendedAllocation.allocations);
 
-      // Step 4: Generate candidates
-      const candidates = generateCandidates(requestBody, allocation);
+      // Legacy 3-category allocation for candidate generation (flight + hotel)
+      const legacyAllocation = {
+        flightBudget: extendedAllocation.allocations.flight,
+        hotelBudget: extendedAllocation.allocations.hotel,
+        bufferBudget: extendedAllocation.allocations.contingency,
+      };
+
+      // Step 4: Generate candidates (flights + hotels)
+      const candidates = generateCandidates(requestBody, legacyAllocation);
       console.log(`Generated ${candidates.length} candidates`);
 
       if (candidates.length === 0) {
@@ -155,10 +167,34 @@ router.post(
       const savedOptions = await saveTripOptions(tripRequest.id, scoredTrips);
       console.log(`Saved ${savedOptions.length} trip options`);
 
+      // Step 9a: Generate and save activities for each trip option (Phase 3)
+      for (const option of savedOptions) {
+        const activityGeneration = generateActivities({
+          destination: option.destination,
+          numberOfDays: requestBody.numberOfDays,
+          activityBudget: extendedAllocation.allocations.activity,
+          travelStyle: requestBody.travelStyle as 'BUDGET' | 'BALANCED',
+        });
+
+        await createActivityOptions(option.id, activityGeneration.activities);
+        console.log(`Generated ${activityGeneration.activities.length} activities for ${option.destination}`);
+      }
+
+      // Step 9b: Reload trip options with activities
+      const optionsWithActivities = await prisma.tripOption.findMany({
+        where: { tripRequestId: tripRequest.id },
+        include: {
+          flightOption: true,
+          hotelOption: true,
+          activityOptions: true,
+        },
+        orderBy: { score: 'desc' },
+      });
+
       // Step 10: Build response
       const response: GenerateTripResponse = {
         tripRequestId: tripRequest.id,
-        options: savedOptions.map((option, index) => {
+        options: optionsWithActivities.map((option, index) => {
           const scoredTrip = scoredTrips[index];
           return {
             id: option.id,
@@ -181,6 +217,17 @@ router.post(
               rating: option.hotelOption!.rating,
               deepLink: option.hotelOption!.deepLink,
             },
+            activities: option.activityOptions?.map((activity) => ({
+              id: activity.id,
+              name: activity.name,
+              category: activity.category,
+              description: activity.description,
+              duration: activity.duration,
+              price: activity.price,
+              rating: activity.rating,
+              deepLink: activity.deepLink,
+              imageUrl: activity.imageUrl,
+            })) || [],
           } as TripOptionResponse;
         }),
       };

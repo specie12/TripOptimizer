@@ -84,6 +84,9 @@ export interface TripOptionResponse {
 
   /** Hotel details */
   hotel: HotelResponse;
+
+  /** Activities included in this trip (Phase 3) */
+  activities?: ActivityResponse[];
 }
 
 /**
@@ -135,6 +138,38 @@ export interface HotelResponse {
 
   /** Direct booking URL */
   deepLink: string;
+}
+
+/**
+ * Activity details in the response (Phase 3)
+ */
+export interface ActivityResponse {
+  /** Unique activity ID */
+  id: string;
+
+  /** Activity name */
+  name: string;
+
+  /** Activity category */
+  category: string;
+
+  /** Detailed description */
+  description: string;
+
+  /** Duration in minutes */
+  duration: number;
+
+  /** Price in cents */
+  price: number;
+
+  /** Rating (0-5 stars, nullable) */
+  rating?: number | null;
+
+  /** Direct booking URL */
+  deepLink: string;
+
+  /** Optional image URL */
+  imageUrl?: string | null;
 }
 
 // =============================================================================

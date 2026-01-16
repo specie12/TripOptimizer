@@ -48,6 +48,16 @@ enum LockStatus {
   CONFIRMED // Booking confirmed, immutable
 }
 
+/// Activity categories for Phase 3
+enum ActivityCategory {
+  TOUR           // Guided tours, walking tours, city tours
+  ATTRACTION     // Museums, landmarks, monuments
+  EXPERIENCE     // Food tours, cooking classes, cultural experiences
+  ADVENTURE      // Hiking, water sports, outdoor activities
+  ENTERTAINMENT  // Shows, concerts, theater
+  TRANSPORT      // Day trips, transfers, special transport
+}
+
 /// Types of user interactions tracked for analytics
 /// MVP: Basic tracking for future personalization
 enum InteractionType {
@@ -144,9 +154,10 @@ model TripOption {
 
   createdAt       DateTime @default(now())
 
-  // Relations (1:1 with FlightOption and HotelOption)
+  // Relations (1:1 with FlightOption and HotelOption, 1:many with ActivityOptions)
   flightOption    FlightOption?
   hotelOption     HotelOption?
+  activityOptions ActivityOption[] // Phase 3: Multiple activities per trip
   interactionEvents InteractionEvent[]
 
   @@index([tripRequestId])
@@ -199,6 +210,43 @@ model HotelOption {
 
   createdAt    DateTime @default(now())
 
+  @@index([lockStatus])
+}
+
+/// Activity booking option for a TripOption (Phase 3)
+/// Multiple activities per TripOption (1:many relation)
+model ActivityOption {
+  id              String           @id @default(uuid()) @db.Uuid
+
+  // Many-to-one relation with TripOption
+  tripOptionId    String           @db.Uuid
+  tripOption      TripOption       @relation(fields: [tripOptionId], references: [id], onDelete: Cascade)
+
+  // Activity details
+  name            String           // Activity name
+  category        ActivityCategory // Type of activity
+  description     String           @db.Text // Detailed description
+  duration        Int              // Duration in minutes
+  price           Int              // Price in cents
+
+  // Optional fields
+  rating          Float?           // Star rating (nullable if unavailable)
+  reviewCount     Int?             // Number of reviews
+  deepLink        String           // Direct booking URL
+  imageUrl        String?          // Activity image
+
+  // Availability
+  availableFrom   DateTime?        // Start of availability window
+  availableTo     DateTime?        // End of availability window
+
+  // Phase 2: Lock-down mechanism for individual activity booking
+  lockStatus      LockStatus       @default(UNLOCKED) // Protection from re-optimization
+  lockedAt        DateTime?        // When this activity was locked
+
+  createdAt       DateTime         @default(now())
+
+  @@index([tripOptionId])
+  @@index([category])
   @@index([lockStatus])
 }
 

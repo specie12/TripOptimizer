@@ -18,6 +18,7 @@ const prisma = new PrismaClient();
 export type TripOptionWithRelations = TripOption & {
   flightOption: FlightOption | null;
   hotelOption: HotelOption | null;
+  activityOptions?: any[]; // Phase 3: Activities
 };
 
 /**
@@ -126,6 +127,7 @@ export async function getTripRequestWithOptions(tripRequestId: string) {
         include: {
           flightOption: true,
           hotelOption: true,
+          activityOptions: true, // Phase 3: Include activities
         },
         orderBy: {
           score: 'desc',
