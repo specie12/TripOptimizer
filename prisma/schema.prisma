@@ -41,6 +41,13 @@ enum BudgetCategory {
   CONTINGENCY // Emergency buffer and unexpected costs
 }
 
+/// Lock status for preventing re-optimization of confirmed bookings (Phase 2)
+enum LockStatus {
+  UNLOCKED  // Can be re-optimized or changed
+  LOCKED    // User-selected, protected from re-optimization
+  CONFIRMED // Booking confirmed, immutable
+}
+
 /// Types of user interactions tracked for analytics
 /// MVP: Basic tracking for future personalization
 enum InteractionType {
@@ -131,6 +138,10 @@ model TripOption {
   explanation     String   @db.Text // Claude-generated explanation
   itineraryJson   Json     // Structured itinerary data
 
+  // Phase 2: Lock-down mechanism
+  lockStatus      LockStatus @default(UNLOCKED) // Protection from re-optimization
+  lockedAt        DateTime?  // When this option was locked
+
   createdAt       DateTime @default(now())
 
   // Relations (1:1 with FlightOption and HotelOption)
@@ -139,6 +150,7 @@ model TripOption {
   interactionEvents InteractionEvent[]
 
   @@index([tripRequestId])
+  @@index([lockStatus])
 }
 
 /// Flight booking option for a TripOption
@@ -157,7 +169,13 @@ model FlightOption {
   returnTime    DateTime // Return flight departure
   deepLink      String   // Direct booking URL
 
+  // Phase 2: Lock-down mechanism for individual flight booking
+  lockStatus    LockStatus @default(UNLOCKED) // Protection from re-optimization
+  lockedAt      DateTime?  // When this flight was locked
+
   createdAt     DateTime @default(now())
+
+  @@index([lockStatus])
 }
 
 /// Hotel booking option for a TripOption
@@ -175,7 +193,13 @@ model HotelOption {
   rating       Float?   // Star rating (nullable if unavailable)
   deepLink     String   // Direct booking URL
 
+  // Phase 2: Lock-down mechanism for individual hotel booking
+  lockStatus   LockStatus @default(UNLOCKED) // Protection from re-optimization
+  lockedAt     DateTime?  // When this hotel was locked
+
   createdAt    DateTime @default(now())
+
+  @@index([lockStatus])
 }
 
 /// Tracks user interactions for analytics and future personalization

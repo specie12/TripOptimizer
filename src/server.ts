@@ -10,6 +10,7 @@ import interactionRoutes from './routes/interaction.routes';
 import parsingRoutes from './routes/parsing.routes';
 import verificationRoutes from './routes/verification.routes';
 import agentRoutes from './routes/agent.routes';
+import { lockdownRouter } from './routes/lockdown.routes';
 import { errorHandler } from './middleware/validation';
 
 // Import agent system
@@ -44,6 +45,7 @@ app.use('/interaction', interactionRoutes);
 app.use('/parse', parsingRoutes);
 app.use('/verify', verificationRoutes);
 app.use('/agents', agentRoutes);
+app.use('/lockdown', lockdownRouter); // Phase 2: Lock-down mechanism
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -64,6 +66,11 @@ app.get('/', (req, res) => {
       'GET /agents/health': 'Agent health summary',
       'GET /agents/status': 'System status (agents + messaging)',
       'GET /agents/messages': 'Message bus activity log',
+      'POST /lockdown/lock': 'Lock a trip option/flight/hotel (Phase 2)',
+      'POST /lockdown/unlock': 'Unlock a trip option/flight/hotel (Phase 2)',
+      'GET /lockdown/status/:id': 'Get lock status for trip option (Phase 2)',
+      'GET /lockdown/trip/:id': 'Get all locked items for trip (Phase 2)',
+      'GET /lockdown/health': 'Lock-down service health check',
     },
   });
 });

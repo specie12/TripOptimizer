@@ -6,6 +6,7 @@
  * - Identifies savings opportunities
  * - Generates alternative recommendations
  * - Ranks options by value
+ * - PHASE 2: Respects lock-down status (LOCKED/CONFIRMED items protected)
  */
 
 import { Agent } from './base.agent';
@@ -15,6 +16,7 @@ import type {
   OptimizationRequest,
   OptimizationResponse,
 } from './types';
+import { getLockedItemsForTripRequest, canReOptimize } from '../services/lockdown.service';
 
 export class OptimizationAgent extends Agent {
   readonly type = 'OPTIMIZATION' as const;
@@ -68,7 +70,8 @@ export class OptimizationAgent extends Agent {
 
   /**
    * Rank trip candidates by value
-   * TODO: Implement actual ranking in Phase 1-3
+   * PHASE 2: Filters out locked items before ranking
+   * TODO: Implement actual ranking in Phase 3
    */
   private async rankCandidates(message: AgentMessage): Promise<void> {
     const request = message.payload as OptimizationRequest;
@@ -78,10 +81,34 @@ export class OptimizationAgent extends Agent {
       constraints: request.constraints,
     });
 
-    // STUB: Return empty ranking for now
-    // In Phases 1-3, this will call the existing scoring service
+    // PHASE 2: Filter out locked items if tripRequestId is provided
+    let candidatesToRank = request.candidates || [];
+
+    if (request.tripRequestId) {
+      const lockedItems = await getLockedItemsForTripRequest(request.tripRequestId);
+      const lockedTripOptionIds = new Set(
+        lockedItems
+          .filter((item) => !canReOptimize(item))
+          .map((item) => item.tripOptionId)
+      );
+
+      const initialCount = candidatesToRank.length;
+      candidatesToRank = candidatesToRank.filter(
+        (candidate) => !lockedTripOptionIds.has((candidate as any).tripOptionId || '')
+      );
+
+      if (lockedTripOptionIds.size > 0) {
+        this.log('info', `Filtered out ${initialCount - candidatesToRank.length} locked items`, {
+          totalLocked: lockedTripOptionIds.size,
+          remainingCandidates: candidatesToRank.length,
+        });
+      }
+    }
+
+    // STUB: Return filtered ranking for now
+    // In Phase 3, this will call the existing scoring service
     const response: OptimizationResponse = {
-      ranked: request.candidates || [],
+      ranked: candidatesToRank,
       savings: 0,
     };
 
@@ -90,6 +117,7 @@ export class OptimizationAgent extends Agent {
 
   /**
    * Find alternative options that may be better
+   * PHASE 2: Only suggests alternatives for unlocked items
    * TODO: Implement in Phase 6 (Continuous Optimization)
    */
   private async findAlternatives(message: AgentMessage): Promise<void> {
@@ -98,6 +126,19 @@ export class OptimizationAgent extends Agent {
     this.log('info', 'Finding alternatives', {
       currentSelections: request.currentSelections,
     });
+
+    // PHASE 2: Check lock status before suggesting alternatives
+    if (request.tripRequestId) {
+      const lockedItems = await getLockedItemsForTripRequest(request.tripRequestId);
+      const unlockedItems = lockedItems.filter((item) => canReOptimize(item));
+
+      this.log('info', `Lock status check: ${unlockedItems.length} unlocked items available for optimization`, {
+        totalItems: lockedItems.length,
+        lockedItems: lockedItems.length - unlockedItems.length,
+      });
+
+      // Future: Only generate alternatives for unlocked items
+    }
 
     // STUB: Return no alternatives for now
     // In Phase 6, this will monitor prices and find better options

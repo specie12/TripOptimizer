@@ -137,6 +137,7 @@ export interface SpendRecordRequest {
  */
 export interface OptimizationRequest {
   type: 'RANK' | 'FIND_ALTERNATIVES';
+  tripRequestId?: string; // Phase 2: For checking locked items
   candidates?: unknown[];
   currentSelections?: unknown[];
   constraints?: Record<string, unknown>;
