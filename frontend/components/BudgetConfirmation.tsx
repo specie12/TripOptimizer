@@ -1,8 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { formatCurrency, formatDays, formatTravelStyle } from '@/lib/formatters';
-import { dollarsToCents } from '@/lib/formatters';
+import { formatCurrency, formatDays, formatTravelStyle, dollarsToCents } from '@/lib/formatters';
+import BudgetBreakdown from './BudgetBreakdown';
 
 interface BudgetConfirmationProps {
   originCity: string;
@@ -100,7 +100,15 @@ export default function BudgetConfirmation({
         </div>
       </div>
 
-      {/* Explanatory Copy - EXACT wording from spec */}
+      {/* Budget Breakdown (Phase 1) */}
+      <div className="mb-8">
+        <BudgetBreakdown
+          totalBudget={dollarsToCents(budgetTotal)}
+          travelStyle={travelStyle}
+        />
+      </div>
+
+      {/* Explanatory Copy */}
       <div className="mb-8 text-left">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
           Here&apos;s how we&apos;ll plan your trip:
@@ -108,16 +116,16 @@ export default function BudgetConfirmation({
         <ul className="space-y-3">
           <li className="flex items-start">
             <span className="text-green-500 mr-3 mt-0.5">&#8226;</span>
-            <span className="text-gray-700">Prioritize affordable flights</span>
+            <span className="text-gray-700">Budget allocated across 6 categories</span>
           </li>
           <li className="flex items-start">
             <span className="text-green-500 mr-3 mt-0.5">&#8226;</span>
-            <span className="text-gray-700">Choose well-rated value hotels</span>
+            <span className="text-gray-700">Find the best value within each budget</span>
           </li>
           <li className="flex items-start">
             <span className="text-green-500 mr-3 mt-0.5">&#8226;</span>
             <span className="text-gray-700">
-              Leave some budget unplanned for flexibility
+              Contingency fund for unexpected expenses
             </span>
           </li>
         </ul>
