@@ -1,21 +1,17 @@
 /**
  * Candidate Generation Service
  *
- * Generates trip option candidates from mock flight/hotel data.
- * In production, this would call real flight/hotel APIs.
+ * Generates trip option candidates using integration layer.
+ * Supports both mock and real API providers through abstraction.
  */
 
 import { v4 as uuidv4 } from 'uuid';
 import { TripOptionCandidate } from '../scoring';
 import { BudgetAllocation, GenerateTripRequest } from '../types/api.types';
-import {
-  DESTINATIONS,
-  getDestination,
-  getAvailableDestinations,
-  DestinationData,
-  MockFlight,
-  MockHotel,
-} from '../config/destinations';
+import { getAvailableDestinations } from '../config/destinations';
+import { flightIntegration } from '../integrations/flight.integration';
+import { hotelIntegration } from '../integrations/hotel.integration';
+import { FlightResult, HotelResult } from '../types/integration.types';
 
 /**
  * Internal type for a generated candidate with full details
@@ -48,16 +44,16 @@ export interface GeneratedCandidate {
  * Generate trip candidates based on request and budget allocation
  *
  * This creates all possible flight + hotel combinations for each
- * destination, then filters out over-budget options.
+ * destination using the integration layer, then filters out over-budget options.
  *
  * @param request - The trip generation request
  * @param allocation - Budget allocation from BudgetConfig
  * @returns Array of candidate trips (unscored)
  */
-export function generateCandidates(
+export async function generateCandidates(
   request: GenerateTripRequest,
   allocation: BudgetAllocation
-): GeneratedCandidate[] {
+): Promise<GeneratedCandidate[]> {
   const candidates: GeneratedCandidate[] = [];
 
   // Determine which destinations to consider
@@ -73,19 +69,21 @@ export function generateCandidates(
     ? new Date(request.endDate)
     : addDays(startDate, request.numberOfDays);
 
-  for (const destName of destinationsToCheck) {
-    const destData = getDestination(destName);
-    if (!destData) continue;
-
-    // Generate all flight + hotel combinations for this destination
-    const destCandidates = generateDestinationCandidates(
-      destData,
+  // Generate candidates for each destination in parallel
+  const candidatePromises = destinationsToCheck.map((destName) =>
+    generateDestinationCandidates(
+      destName,
       request,
       allocation,
       startDate,
       endDate
-    );
+    )
+  );
 
+  const results = await Promise.all(candidatePromises);
+
+  // Flatten results
+  for (const destCandidates of results) {
     candidates.push(...destCandidates);
   }
 
@@ -93,25 +91,47 @@ export function generateCandidates(
 }
 
 /**
- * Generate candidates for a single destination
+ * Generate candidates for a single destination using integrations
  */
-function generateDestinationCandidates(
-  destData: DestinationData,
+async function generateDestinationCandidates(
+  destination: string,
   request: GenerateTripRequest,
   allocation: BudgetAllocation,
   startDate: Date,
   endDate: Date
-): GeneratedCandidate[] {
+): Promise<GeneratedCandidate[]> {
   const candidates: GeneratedCandidate[] = [];
   const nights = request.numberOfDays;
 
-  // Try each flight + hotel combination
-  for (const flight of destData.flights) {
-    for (const hotel of destData.hotels) {
-      // Calculate costs
-      const flightPrice = adjustFlightPrice(flight.basePrice, request.originCity);
-      const hotelTotal = hotel.pricePerNight * nights;
-      const totalCost = flightPrice + hotelTotal;
+  // Search for flights using integration
+  const flightResponse = await flightIntegration.search({
+    origin: request.originCity,
+    destination,
+    departureDate: startDate.toISOString(),
+    returnDate: endDate.toISOString(),
+    maxPrice: allocation.maxFlightBudget,
+    maxResults: 10,
+  });
+
+  // Search for hotels using integration
+  const hotelResponse = await hotelIntegration.search({
+    destination,
+    checkInDate: startDate.toISOString(),
+    checkOutDate: endDate.toISOString(),
+    numberOfNights: nights,
+    maxPrice: allocation.maxHotelBudget,
+    maxResults: 10,
+  });
+
+  // Check if we got any results
+  if (flightResponse.data.length === 0 || hotelResponse.data.length === 0) {
+    return candidates;
+  }
+
+  // Generate all flight + hotel combinations
+  for (const flight of flightResponse.data) {
+    for (const hotel of hotelResponse.data) {
+      const totalCost = flight.price + hotel.priceTotal;
 
       // Skip if over total budget
       if (totalCost > request.budgetTotal) {
@@ -120,21 +140,21 @@ function generateDestinationCandidates(
 
       const candidate: GeneratedCandidate = {
         id: uuidv4(),
-        destination: destData.name,
+        destination,
         flight: {
           provider: flight.provider,
-          price: flightPrice,
-          departureTime: startDate,
-          returnTime: endDate,
-          deepLink: generateFlightDeepLink(flight.provider, destData.name),
+          price: flight.price,
+          departureTime: new Date(flight.departureTime),
+          returnTime: new Date(flight.returnTime),
+          deepLink: flight.deepLink,
         },
         hotel: {
           name: hotel.name,
-          priceTotal: hotelTotal,
+          priceTotal: hotel.priceTotal,
           pricePerNight: hotel.pricePerNight,
-          nights: nights,
+          nights,
           rating: hotel.rating,
-          deepLink: generateHotelDeepLink(hotel.name, destData.name),
+          deepLink: hotel.deepLink,
         },
         totalCost,
         remainingBudget: request.budgetTotal - totalCost,
@@ -173,28 +193,6 @@ export function toScoringCandidate(candidate: GeneratedCandidate): TripOptionCan
 }
 
 /**
- * Adjust flight price based on origin city
- *
- * In a real implementation, this would be based on actual route pricing.
- * For MVP, we apply simple distance-based adjustments.
- */
-function adjustFlightPrice(basePrice: number, originCity: string): number {
-  // Simple price adjustments based on origin (mock logic)
-  const adjustments: Record<string, number> = {
-    'New York': 1.0,
-    'Los Angeles': 1.1,
-    'Chicago': 1.05,
-    'Miami': 1.08,
-    'Seattle': 1.15,
-    'Boston': 0.98,
-    'San Francisco': 1.12,
-  };
-
-  const multiplier = adjustments[originCity] || 1.0;
-  return Math.floor(basePrice * multiplier);
-}
-
-/**
  * Get default start date (2 weeks from now)
  */
 function getDefaultStartDate(): Date {
@@ -210,22 +208,4 @@ function addDays(date: Date, days: number): Date {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
   return result;
-}
-
-/**
- * Generate mock flight booking deep link
- */
-function generateFlightDeepLink(provider: string, destination: string): string {
-  const providerSlug = provider.toLowerCase().replace(/\s+/g, '-');
-  const destSlug = destination.toLowerCase().replace(/\s+/g, '-');
-  return `https://www.${providerSlug}.com/book?dest=${destSlug}`;
-}
-
-/**
- * Generate mock hotel booking deep link
- */
-function generateHotelDeepLink(hotelName: string, destination: string): string {
-  const hotelSlug = hotelName.toLowerCase().replace(/\s+/g, '-');
-  const destSlug = destination.toLowerCase().replace(/\s+/g, '-');
-  return `https://www.booking.com/hotel/${destSlug}/${hotelSlug}`;
 }

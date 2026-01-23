@@ -84,8 +84,8 @@ router.post(
         activitiesBudget: extendedAllocation.allocations.activity,
       };
 
-      // Step 4: Generate candidates (flights + hotels)
-      const candidates = generateCandidates(requestBody, legacyAllocation);
+      // Step 4: Generate candidates (flights + hotels) using integrations
+      const candidates = await generateCandidates(requestBody, legacyAllocation);
       console.log(`Generated ${candidates.length} candidates`);
 
       if (candidates.length === 0) {
@@ -168,9 +168,9 @@ router.post(
       const savedOptions = await saveTripOptions(tripRequest.id, scoredTrips);
       console.log(`Saved ${savedOptions.length} trip options`);
 
-      // Step 9a: Generate and save activities for each trip option (Phase 3)
+      // Step 9a: Generate and save activities for each trip option (Phase 3) using integration
       for (const option of savedOptions) {
-        const activityGeneration = generateActivities({
+        const activityGeneration = await generateActivities({
           destination: option.destination,
           numberOfDays: requestBody.numberOfDays,
           activityBudget: extendedAllocation.allocations.activity,

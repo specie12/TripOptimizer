@@ -1,7 +1,8 @@
 /**
  * Activity Service (Phase 3)
  *
- * Generates and scores activities for trip options based on budget allocation
+ * Generates and scores activities for trip options using integration layer.
+ * Supports both mock and real API providers through abstraction.
  */
 
 import { PrismaClient, ActivityCategory } from '@prisma/client';
@@ -14,33 +15,33 @@ import {
   DEFAULT_ACTIVITY_SCORING,
   ActivityFilters,
 } from '../types/activity.types';
-import { getMockActivitiesForDestination } from '../config/activities.config';
+import { activityIntegration } from '../integrations/activity.integration';
+import { ActivityResult } from '../types/integration.types';
 
 const prisma = new PrismaClient();
 
 /**
- * Generate activities for a trip option
+ * Generate activities for a trip option using integration layer
  *
  * Algorithm:
- * 1. Get all available activities for destination
- * 2. Filter by budget and preferences
+ * 1. Search for available activities using integration
+ * 2. Convert to ActivityCandidate format
  * 3. Score each activity
  * 4. Select top activities within budget
  * 5. Maximize value and diversity
  */
-export function generateActivities(
+export async function generateActivities(
   request: ActivityGenerationRequest
-): ActivityGenerationResponse {
-  // Get available activities for destination
-  const availableActivities = getMockActivitiesForDestination(request.destination);
-
-  // Filter activities
-  const filteredActivities = filterActivities(availableActivities, {
+): Promise<ActivityGenerationResponse> {
+  // Search for activities using integration
+  const activityResponse = await activityIntegration.search({
+    destination: request.destination,
     maxPrice: request.activityBudget,
-    categories: request.categories,
+    categories: request.categories?.map((c) => c.toString()),
+    maxResults: 20,
   });
 
-  if (filteredActivities.length === 0) {
+  if (activityResponse.data.length === 0) {
     return {
       activities: [],
       totalCost: 0,
@@ -48,9 +49,14 @@ export function generateActivities(
     };
   }
 
+  // Convert integration results to ActivityCandidate format
+  const availableActivities: ActivityCandidate[] = activityResponse.data.map(
+    (result) => transformActivityResult(result)
+  );
+
   // Score activities
   const scoredActivities = scoreActivities(
-    filteredActivities,
+    availableActivities,
     request.activityBudget,
     DEFAULT_ACTIVITY_SCORING
   );
@@ -69,6 +75,23 @@ export function generateActivities(
     activities: selectedActivities,
     totalCost,
     remaining: request.activityBudget - totalCost,
+  };
+}
+
+/**
+ * Transform integration ActivityResult to ActivityCandidate
+ */
+function transformActivityResult(result: ActivityResult): ActivityCandidate {
+  return {
+    name: result.name,
+    category: result.category as ActivityCategory,
+    description: result.description,
+    duration: result.duration,
+    price: result.price,
+    rating: result.rating !== null ? result.rating : undefined,
+    reviewCount: result.reviewCount,
+    deepLink: result.deepLink,
+    imageUrl: result.imageUrl !== null ? result.imageUrl : undefined,
   };
 }
 

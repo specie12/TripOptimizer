@@ -8,6 +8,9 @@
 import { ActivityCategory } from '@prisma/client';
 import { ActivityCandidate } from '../types/activity.types';
 
+// Re-export ActivityCandidate for integrations
+export type { ActivityCandidate };
+
 /**
  * Activity database by destination
  */
