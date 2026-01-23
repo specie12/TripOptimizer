@@ -45,8 +45,8 @@ lockdownRouter.post('/lock', async (req: Request, res: Response) => {
       });
     }
 
-    const validLockStatuses = [LockStatus.LOCKED, LockStatus.CONFIRMED];
-    if (!validLockStatuses.includes(request.lockStatus)) {
+    const validLockStatuses: LockStatus[] = [LockStatus.LOCKED, LockStatus.CONFIRMED];
+    if (!validLockStatuses.includes(request.lockStatus as LockStatus)) {
       return res.status(400).json({
         error: `Invalid lockStatus. Must be one of: ${validLockStatuses.join(', ')}`,
       });

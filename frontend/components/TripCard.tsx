@@ -7,6 +7,7 @@ import { trackExpandExplanation, trackViewDetails } from '@/lib/tracking';
 import WhyThisWorks from './WhyThisWorks';
 import TripDetails from './TripDetails';
 import AffiliateDisclosure from './monetization/AffiliateDisclosure';
+import ActivityCard from './ActivityCard';
 
 interface TripCardProps {
   tripOption: TripOptionResponse;
@@ -97,6 +98,23 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
           <WhyThisWorks explanation={tripOption.explanation} />
         )}
       </div>
+
+      {/* Activities Section (Phase 3) */}
+      {tripOption.activities && tripOption.activities.length > 0 && (
+        <div className="px-6 pb-4 border-t border-gray-100">
+          <div className="pt-4">
+            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <span>🎯</span>
+              <span>Recommended Activities ({tripOption.activities.length})</span>
+            </h4>
+            <div className="space-y-2">
+              {tripOption.activities.map((activity) => (
+                <ActivityCard key={activity.id} activity={activity} compact={true} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bottom Section - Actions */}
       <div className="px-6 pb-6">

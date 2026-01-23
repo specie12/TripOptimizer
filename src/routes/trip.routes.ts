@@ -78,9 +78,10 @@ router.post(
 
       // Legacy 3-category allocation for candidate generation (flight + hotel)
       const legacyAllocation = {
-        flightBudget: extendedAllocation.allocations.flight,
-        hotelBudget: extendedAllocation.allocations.hotel,
-        bufferBudget: extendedAllocation.allocations.contingency,
+        maxFlightBudget: extendedAllocation.allocations.flight,
+        maxHotelBudget: extendedAllocation.allocations.hotel,
+        bufferAmount: extendedAllocation.allocations.contingency,
+        activitiesBudget: extendedAllocation.allocations.activity,
       };
 
       // Step 4: Generate candidates (flights + hotels)

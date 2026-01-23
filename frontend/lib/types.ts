@@ -39,6 +39,7 @@ export interface TripOptionResponse {
   itinerary: ItineraryDay[];
   flight: FlightResponse;
   hotel: HotelResponse;
+  activities?: ActivityResponse[]; // Phase 3: Activities
 }
 
 export interface ItineraryDay {
@@ -68,6 +69,18 @@ export interface HotelResponse {
   rating: number | null;
   deepLink: string;
   bookingUrl?: string; // Alias for deepLink
+}
+
+export interface ActivityResponse {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  duration: number; // In minutes
+  price: number; // In cents
+  rating?: number | null;
+  deepLink: string;
+  imageUrl?: string | null;
 }
 
 // =============================================================================

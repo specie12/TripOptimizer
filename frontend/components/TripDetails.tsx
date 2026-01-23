@@ -4,6 +4,7 @@ import { TripOptionResponse } from '@/lib/types';
 import { formatCurrency, formatDate, formatTime, formatRating } from '@/lib/formatters';
 import BudgetBreakdown from './BudgetBreakdown';
 import ItineraryPreview from './ItineraryPreview';
+import ActivityCard from './ActivityCard';
 
 interface TripDetailsProps {
   tripOption: TripOptionResponse;
@@ -117,6 +118,25 @@ export default function TripDetails({
           </div>
         </div>
       </div>
+
+      {/* Activities Section (Phase 3) */}
+      {tripOption.activities && tripOption.activities.length > 0 && (
+        <div className="bg-white rounded-lg p-4">
+          <h4 className="font-semibold text-gray-900 mb-4">
+            Recommended Activities ({tripOption.activities.length})
+          </h4>
+          <div className="space-y-3">
+            {tripOption.activities.map((activity) => (
+              <ActivityCard key={activity.id} activity={activity} compact={false} />
+            ))}
+          </div>
+          <p className="text-xs text-gray-500 mt-4 italic">
+            Total activities cost: {formatCurrency(
+              tripOption.activities.reduce((sum, a) => sum + a.price, 0)
+            )}
+          </p>
+        </div>
+      )}
 
       {/* Itinerary Preview */}
       {itinerary && itinerary.length > 0 && (
