@@ -14,6 +14,11 @@ import type {
   AgentCapability,
   MonitoringAlert,
 } from './types';
+import {
+  startPriceMonitoring,
+  stopPriceMonitoring,
+  monitorAllTripPrices,
+} from '../jobs/price-monitor.job';
 
 export class MonitoringAgent extends Agent {
   readonly type = 'MONITORING' as const;
@@ -38,6 +43,9 @@ export class MonitoringAgent extends Agent {
 
   // Track items being monitored
   private watchedItems: Set<string> = new Set();
+
+  // Track price monitoring interval
+  private monitoringInterval: NodeJS.Timeout | null = null;
 
   // ============================================
   // MESSAGE HANDLING
@@ -77,7 +85,6 @@ export class MonitoringAgent extends Agent {
 
   /**
    * Start watching an item for changes
-   * TODO: Implement in Phase 6 (Continuous Optimization)
    */
   private async watchItem(message: AgentMessage): Promise<void> {
     const payload = message.payload as { itemId: string; itemType: string };
@@ -89,8 +96,6 @@ export class MonitoringAgent extends Agent {
 
     this.watchedItems.add(payload.itemId);
 
-    // STUB: Just acknowledge for now
-    // In Phase 6, this will start background monitoring
     await this.respondToMessage(message, {
       success: true,
       watching: payload.itemId,
@@ -99,7 +104,6 @@ export class MonitoringAgent extends Agent {
 
   /**
    * Stop watching an item
-   * TODO: Implement in Phase 6
    */
   private async unwatchItem(message: AgentMessage): Promise<void> {
     const payload = message.payload as { itemId: string };
@@ -126,8 +130,16 @@ export class MonitoringAgent extends Agent {
   }
 
   /**
+   * Manually trigger price monitoring (called by orchestrator)
+   */
+  async triggerManualMonitoring(): Promise<void> {
+    this.log('info', 'Manual price monitoring triggered');
+    await monitorAllTripPrices();
+    this.log('info', 'Manual price monitoring completed');
+  }
+
+  /**
    * Send monitoring alert to orchestrator
-   * TODO: Implement in Phase 6
    */
   private async sendAlert(alert: MonitoringAlert): Promise<void> {
     this.log('warn', 'Sending monitoring alert', alert);
@@ -141,12 +153,21 @@ export class MonitoringAgent extends Agent {
 
   protected async onInitialize(): Promise<void> {
     this.log('info', 'Monitoring agent initialized');
-    // TODO: Start background monitoring jobs in Phase 6
+
+    // Start background price monitoring job
+    this.monitoringInterval = startPriceMonitoring();
+    this.log('info', 'Background price monitoring started (60min intervals)');
   }
 
   protected async onShutdown(): Promise<void> {
     this.log('info', 'Monitoring agent shutting down');
-    // TODO: Stop background monitoring jobs in Phase 6
+
+    // Stop background monitoring job
+    if (this.monitoringInterval) {
+      stopPriceMonitoring(this.monitoringInterval);
+      this.log('info', 'Background price monitoring stopped');
+    }
+
     this.watchedItems.clear();
   }
 }
