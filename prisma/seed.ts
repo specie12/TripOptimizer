@@ -7,12 +7,10 @@ const prisma = new PrismaClient();
  *
  * Seeds the BudgetConfig table with default budget allocation percentages.
  *
- * Budget Allocation Notes:
+ * Budget Allocation Notes (Phase 1 - 6 categories):
  * - Percentages are stored as decimals (e.g., 0.35 = 35%)
- * - BUDGET style: 35% flight + 40% hotel + 10% buffer = 85% allocated
- *   → Remaining 15% is for activities and discretionary spending
- * - BALANCED style: 40% flight + 45% hotel + 10% buffer = 95% allocated
- *   → Remaining 5% is for activities and discretionary spending
+ * - BUDGET style: Focus on cost savings
+ * - BALANCED style: Balance of comfort and value
  *
  * These percentages are used for deterministic budget calculations
  * and are not generated or modified by AI.
@@ -22,23 +20,30 @@ interface BudgetConfigSeed {
   travelStyle: TravelStyle;
   flightPct: number;
   hotelPct: number;
-  bufferPct: number;
+  activityPct: number;
+  foodPct: number;
+  transportPct: number;
+  contingencyPct: number;
 }
 
 const budgetConfigs: BudgetConfigSeed[] = [
   {
     travelStyle: TravelStyle.BUDGET,
-    flightPct: 0.35,  // 35% for flights
-    hotelPct: 0.40,   // 40% for hotels
-    bufferPct: 0.10,  // 10% emergency buffer
-    // Remaining 15% for activities/discretionary
+    flightPct: 0.35,      // 35% for flights
+    hotelPct: 0.35,       // 35% for hotels
+    activityPct: 0.10,    // 10% for activities
+    foodPct: 0.08,        // 8% for food
+    transportPct: 0.07,   // 7% for transport
+    contingencyPct: 0.05, // 5% emergency buffer
   },
   {
     travelStyle: TravelStyle.BALANCED,
-    flightPct: 0.40,  // 40% for flights
-    hotelPct: 0.45,   // 45% for hotels
-    bufferPct: 0.10,  // 10% emergency buffer
-    // Remaining 5% for activities/discretionary
+    flightPct: 0.35,      // 35% for flights
+    hotelPct: 0.40,       // 40% for hotels
+    activityPct: 0.12,    // 12% for activities
+    foodPct: 0.08,        // 8% for food
+    transportPct: 0.03,   // 3% for transport
+    contingencyPct: 0.02, // 2% emergency buffer
   },
 ];
 
@@ -51,25 +56,40 @@ async function main() {
       update: {
         flightPct: config.flightPct,
         hotelPct: config.hotelPct,
-        bufferPct: config.bufferPct,
+        activityPct: config.activityPct,
+        foodPct: config.foodPct,
+        transportPct: config.transportPct,
+        contingencyPct: config.contingencyPct,
       },
       create: {
         travelStyle: config.travelStyle,
         flightPct: config.flightPct,
         hotelPct: config.hotelPct,
-        bufferPct: config.bufferPct,
+        activityPct: config.activityPct,
+        foodPct: config.foodPct,
+        transportPct: config.transportPct,
+        contingencyPct: config.contingencyPct,
       },
     });
 
-    const totalAllocated = (config.flightPct + config.hotelPct + config.bufferPct) * 100;
-    const remaining = 100 - totalAllocated;
+    const totalAllocated = (
+      config.flightPct +
+      config.hotelPct +
+      config.activityPct +
+      config.foodPct +
+      config.transportPct +
+      config.contingencyPct
+    ) * 100;
 
     console.log(
       `✓ ${config.travelStyle}: ` +
       `${config.flightPct * 100}% flight, ` +
       `${config.hotelPct * 100}% hotel, ` +
-      `${config.bufferPct * 100}% buffer ` +
-      `(${remaining}% remaining for activities)`
+      `${config.activityPct * 100}% activity, ` +
+      `${config.foodPct * 100}% food, ` +
+      `${config.transportPct * 100}% transport, ` +
+      `${config.contingencyPct * 100}% contingency ` +
+      `(total: ${totalAllocated}%)`
     );
   }
 

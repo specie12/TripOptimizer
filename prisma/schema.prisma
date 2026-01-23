@@ -122,6 +122,7 @@ model TripRequest {
   // Relations
   tripOptions  TripOption[]
   budgetAllocations BudgetAllocation[]
+  spendRecords SpendRecord[] // Phase 5: Track actual spending
 
   @@index([userId])
 }
@@ -311,4 +312,23 @@ model BudgetAllocation {
 
   @@unique([tripRequestId, category])
   @@index([tripRequestId])
+}
+
+/// Records actual spending against budget categories (Phase 5)
+/// Enables real-time spend tracking and budget alerts
+model SpendRecord {
+  id            String         @id @default(uuid()) @db.Uuid
+  tripRequestId String         @db.Uuid
+  tripRequest   TripRequest    @relation(fields: [tripRequestId], references: [id], onDelete: Cascade)
+
+  category      BudgetCategory // Which category this spend belongs to
+  amount        Int            // Amount spent in cents
+  description   String         @db.Text // What was purchased/booked
+  recordedAt    DateTime       @default(now()) // When the spend occurred
+
+  createdAt     DateTime       @default(now())
+
+  @@index([tripRequestId])
+  @@index([category])
+  @@index([recordedAt])
 }

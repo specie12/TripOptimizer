@@ -5,7 +5,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { TravelStyle } from '@prisma/client';
+import { TravelStyle, BudgetCategory } from '@prisma/client';
 
 import { validateGenerateTripRequest } from '../middleware/validation';
 import {
@@ -75,6 +75,19 @@ router.post(
         extendedBudgetConfig
       );
       console.log('Extended budget allocation:', extendedAllocation.allocations);
+
+      // Step 3a: Initialize budget allocations in database (Phase 5)
+      const { initializeBudgetAllocations } = await import('../services/spend.service');
+      const budgetAllocationsByCategory = {
+        [BudgetCategory.FLIGHT]: extendedAllocation.allocations.flight,
+        [BudgetCategory.HOTEL]: extendedAllocation.allocations.hotel,
+        [BudgetCategory.ACTIVITY]: extendedAllocation.allocations.activity,
+        [BudgetCategory.FOOD]: extendedAllocation.allocations.food,
+        [BudgetCategory.TRANSPORT]: extendedAllocation.allocations.transport,
+        [BudgetCategory.CONTINGENCY]: extendedAllocation.allocations.contingency,
+      };
+      await initializeBudgetAllocations(tripRequest.id, budgetAllocationsByCategory);
+      console.log('Initialized budget allocations for spend tracking');
 
       // Legacy 3-category allocation for candidate generation (flight + hotel)
       const legacyAllocation = {
