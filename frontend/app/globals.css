@@ -8,6 +8,23 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  /* Phase 10: Purple Gradient Theme System */
+  /* Primary gradient colors */
+  --color-primary-purple: #8b5cf6;
+  --color-primary-pink: #ec4899;
+
+  /* Category colors for cost breakdown */
+  --color-flight: #3b82f6;    /* blue */
+  --color-hotel: #8b5cf6;     /* purple */
+  --color-activity: #10b981;  /* green */
+  --color-food: #f59e0b;      /* orange */
+  --color-transport: #eab308; /* yellow */
+  --color-contingency: #6b7280; /* gray */
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  --gradient-primary-hover: linear-gradient(135deg, #7c3aed 0%, #db2777 100%);
 }
 
 body {

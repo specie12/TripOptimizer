@@ -1,0 +1,122 @@
+'use client';
+
+/**
+ * WhatIsIncluded - Phase 11
+ *
+ * Displays what's included in the trip package:
+ * - Round-trip flights
+ * - Accommodation
+ * - Activities & Tours
+ * - Local Transportation
+ *
+ * Bottom CTA for booking
+ */
+
+import { TripOptionResponse } from '@/lib/types';
+import { formatCurrency } from '@/lib/formatters';
+
+interface WhatIsIncludedProps {
+  tripOption: TripOptionResponse;
+  numberOfDays: number;
+}
+
+export default function WhatIsIncluded({
+  tripOption,
+  numberOfDays,
+}: WhatIsIncludedProps) {
+  const flightCost = tripOption.flight.price;
+  const hotelCost = tripOption.hotel.priceTotal;
+  const activitiesCost = tripOption.activities?.reduce((sum, a) => sum + a.price, 0) || 0;
+  const activityCount = tripOption.activities?.length || 0;
+
+  // Estimate transport from remaining budget
+  const remainingAfterActivities = tripOption.remainingBudget - activitiesCost;
+  const estimatedTransport = Math.floor(remainingAfterActivities * 0.4);
+
+  const inclusions = [
+    {
+      title: 'Round-trip Flights',
+      icon: '✈️',
+      color: 'bg-blue-100 text-blue-800',
+      details: `Economy class • ${tripOption.flight.provider}`,
+      price: flightCost,
+    },
+    {
+      title: 'Accommodation',
+      icon: '🏨',
+      color: 'bg-purple-100 text-purple-800',
+      details: `${numberOfDays} nights • ${tripOption.hotel.name}`,
+      price: hotelCost,
+    },
+    {
+      title: 'Activities & Tours',
+      icon: '🎭',
+      color: 'bg-green-100 text-green-800',
+      details: `${activityCount} experiences included`,
+      price: activitiesCost,
+    },
+    {
+      title: 'Local Transportation',
+      icon: '🚗',
+      color: 'bg-yellow-100 text-yellow-800',
+      details: 'Metro & bus passes',
+      price: estimatedTransport,
+    },
+  ];
+
+  return (
+    <div className="bg-white rounded-2xl shadow-lg p-8">
+      <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+        <span>📦</span>
+        <span>What&apos;s Included</span>
+      </h3>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        {inclusions.map((item, index) => (
+          <div
+            key={index}
+            className={`${item.color} rounded-xl p-5`}
+          >
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{item.icon}</span>
+                <div>
+                  <h4 className="font-semibold text-base">{item.title}</h4>
+                  <p className="text-sm opacity-80">{item.details}</p>
+                </div>
+              </div>
+            </div>
+            <p className="text-right font-bold text-lg mt-2">
+              {formatCurrency(item.price)}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Ready to Book Section */}
+      <div className="border-t border-gray-200 pt-6">
+        <div className="text-center mb-4">
+          <p className="text-gray-600 mb-2">Ready to book?</p>
+          <p className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            {formatCurrency(tripOption.totalCost)}
+          </p>
+          <p className="text-sm text-gray-500 mt-1">Total for everything</p>
+        </div>
+
+        <button
+          className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg mb-3"
+          onClick={() => {
+            // Scroll to booking buttons
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        >
+          Book This Trip ✨
+        </button>
+
+        <p className="text-center text-xs text-gray-500">
+          One-click booking • All components included
+        </p>
+      </div>
+    </div>
+  );
+}

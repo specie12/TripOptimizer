@@ -30,6 +30,12 @@ import { scoreTripOptionsWithPersonalization, ScoringResult } from '../scoring';
 import { getUserPreferences, PersonalizationContext } from '../personalization';
 import { PrismaClient } from '@prisma/client';
 import { generateActivities, createActivityOptions } from '../services/activity.service';
+import { extractHighlights } from '../services/highlights.service';
+import {
+  generateTripDescription,
+  generateScoreBreakdown,
+  calculateMatchPercentage,
+} from '../services/trip-description.service';
 
 const prisma = new PrismaClient();
 
@@ -205,17 +211,37 @@ router.post(
         orderBy: { score: 'desc' },
       });
 
-      // Step 10: Build response
+      // Step 10: Build response (Phase 7: with highlights and match percentages)
       const response: GenerateTripResponse = {
         tripRequestId: tripRequest.id,
         options: optionsWithActivities.map((option, index) => {
           const scoredTrip = scoredTrips[index];
+
+          // Phase 7: Calculate new fields
+          const matchPercentage = calculateMatchPercentage(option.score);
+          const highlights = extractHighlights(scoredTrip.itinerary);
+          const tripTypeDescription = generateTripDescription(
+            requestBody.budgetTotal,
+            option.totalCost,
+            requestBody.travelStyle,
+            option.score
+          );
+          const scoreBreakdown = generateScoreBreakdown(
+            requestBody.budgetTotal,
+            option.totalCost,
+            option.score
+          );
+
           return {
             id: option.id,
             destination: option.destination,
             totalCost: option.totalCost,
             remainingBudget: option.remainingBudget,
             score: option.score,
+            matchPercentage,
+            highlights,
+            tripTypeDescription,
+            scoreBreakdown,
             explanation: option.explanation,
             itinerary: scoredTrip.itinerary,
             flight: {

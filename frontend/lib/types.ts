@@ -16,7 +16,10 @@ export interface GenerateTripRequest {
   endDate?: string;
   numberOfDays: number;
   budgetTotal: number; // In cents
-  travelStyle: 'BUDGET' | 'BALANCED';
+  travelStyle: 'BUDGET' | 'MID_RANGE' | 'BALANCED' | 'LUXURY'; // Phase 7: Extended
+  tripPace?: 'RELAXED' | 'BALANCED' | 'PACKED'; // Phase 7
+  accommodationType?: 'HOTELS' | 'AIRBNB' | 'RESORTS' | 'HOSTELS'; // Phase 7
+  interests?: string[]; // Phase 7: InterestCategory values
   userId?: string;
 }
 
@@ -35,6 +38,14 @@ export interface TripOptionResponse {
   totalCost: number; // In cents
   remainingBudget: number; // In cents
   score: number; // 0-1 (NOT displayed to users)
+  matchPercentage: number; // Phase 7: 0-100 (derived from score)
+  highlights: string[]; // Phase 7: Top 3-5 attractions
+  tripTypeDescription: string; // Phase 7: Budget efficiency description
+  scoreBreakdown?: { // Phase 7: Optional transparency
+    budgetEfficiency: number;
+    valueForMoney: number;
+    preferenceMatch: number;
+  };
   explanation: string;
   itinerary: ItineraryDay[];
   flight: FlightResponse;
@@ -108,5 +119,8 @@ export interface TripFormData {
   startDate?: string; // Optional - ISO date string
   numberOfDays: number;
   budgetTotal: number; // In dollars (converted to cents when sending to API)
-  travelStyle: 'BUDGET' | 'BALANCED';
+  travelStyle: 'BUDGET' | 'MID_RANGE' | 'BALANCED' | 'LUXURY'; // Phase 7: Extended
+  tripPace?: 'RELAXED' | 'BALANCED' | 'PACKED'; // Phase 7
+  accommodationType?: 'HOTELS' | 'AIRBNB' | 'RESORTS' | 'HOSTELS'; // Phase 7
+  interests?: string[]; // Phase 7: InterestCategory values
 }

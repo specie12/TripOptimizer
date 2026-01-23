@@ -32,8 +32,17 @@ export interface GenerateTripRequest {
   /** Total budget in cents (e.g., 200000 = $2,000) */
   budgetTotal: number;
 
-  /** Travel style determines budget allocation */
-  travelStyle: 'BUDGET' | 'BALANCED';
+  /** Travel style determines budget allocation (Phase 7: extended to support MID_RANGE and LUXURY) */
+  travelStyle: 'BUDGET' | 'MID_RANGE' | 'BALANCED' | 'LUXURY';
+
+  /** Optional trip pace preference (Phase 7) */
+  tripPace?: 'RELAXED' | 'BALANCED' | 'PACKED';
+
+  /** Optional accommodation type preference (Phase 7) */
+  accommodationType?: 'HOTELS' | 'AIRBNB' | 'RESORTS' | 'HOSTELS';
+
+  /** Optional user interests for personalization (Phase 7) */
+  interests?: string[]; // InterestCategory values
 
   /** Optional user ID for tracking (anonymous if not provided) */
   userId?: string;
@@ -72,6 +81,22 @@ export interface TripOptionResponse {
 
   /** Score from 0-1 (higher is better) */
   score: number;
+
+  /** Match percentage (0-100) derived from score (Phase 7) */
+  matchPercentage: number;
+
+  /** Trip highlights - top 3-5 attractions (Phase 7) */
+  highlights: string[];
+
+  /** Trip type description based on budget efficiency (Phase 7) */
+  tripTypeDescription: string;
+
+  /** Optional score breakdown for transparency (Phase 7) */
+  scoreBreakdown?: {
+    budgetEfficiency: number;
+    valueForMoney: number;
+    preferenceMatch: number;
+  };
 
   /** AI-generated explanation of why this option is good */
   explanation: string;

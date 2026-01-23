@@ -25,10 +25,12 @@ datasource db {
 // =============================================================================
 
 /// Travel style affects budget allocation percentages
-/// MVP: Only BUDGET and BALANCED supported
+/// Phase 7: Extended to support MID_RANGE and LUXURY
 enum TravelStyle {
-  BUDGET   // Cost-conscious travelers
-  BALANCED // Mix of comfort and value
+  BUDGET    // Cost-conscious travelers
+  MID_RANGE // Mid-range comfort with good value
+  BALANCED  // Mix of comfort and value (internal use)
+  LUXURY    // Premium experiences and high-end accommodations
 }
 
 /// Budget categories for 6-way budget allocation (Phase 1)
@@ -56,6 +58,33 @@ enum ActivityCategory {
   ADVENTURE      // Hiking, water sports, outdoor activities
   ENTERTAINMENT  // Shows, concerts, theater
   TRANSPORT      // Day trips, transfers, special transport
+}
+
+/// Trip pace preference for Phase 7
+enum TripPace {
+  RELAXED  // 2-3 activities per day
+  BALANCED // 4-5 activities per day
+  PACKED   // 6+ activities per day
+}
+
+/// Accommodation type preference for Phase 7
+enum AccommodationType {
+  HOTELS   // Traditional hotels
+  AIRBNB   // Airbnb/vacation rentals
+  RESORTS  // All-inclusive resorts
+  HOSTELS  // Budget hostels
+}
+
+/// User interest categories for Phase 7
+enum InterestCategory {
+  CULTURE_HISTORY    // Culture & History
+  FOOD_DINING        // Food & Dining
+  ADVENTURE          // Adventure activities
+  BEACH_RELAXATION   // Beach & Relaxation
+  NIGHTLIFE          // Nightlife & Entertainment
+  NATURE_WILDLIFE    // Nature & Wildlife
+  SHOPPING           // Shopping
+  ART_MUSEUMS        // Art & Museums
 }
 
 /// Types of user interactions tracked for analytics
@@ -111,11 +140,16 @@ model TripRequest {
 
   // Budget (stored in cents to avoid floating-point issues)
   budgetTotal  Int         // Total budget in cents (e.g., 100000 = $1,000)
-  travelStyle  TravelStyle // Determines budget allocation percentages
+  travelStyle  TravelStyle @default(BALANCED) // Determines budget allocation percentages
 
   // Phase 1: User preferences and constraints
   priorities   Json?       // { "flight": 1, "hotel": 2, "activities": 3, "food": 4, "transport": 5, "contingency": 6 }
   constraints  Json?       // { "mustHave": [], "mustAvoid": [], "preferences": {} }
+
+  // Phase 7: Enhanced travel preferences
+  tripPace          TripPace?            // Desired activity density per day
+  accommodationType AccommodationType?   // Preferred lodging type
+  interests         InterestCategory[]   // User's travel interests (multi-select)
 
   createdAt    DateTime    @default(now())
 

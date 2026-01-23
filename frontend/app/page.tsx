@@ -1,57 +1,96 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
-import TripInputForm from '@/components/TripInputForm';
+/**
+ * Landing Page - Multi-Step Form Wizard (Phase 8)
+ *
+ * Replaced single-page form with 4-step wizard:
+ * 1. Budget Basics
+ * 2. Travel Style
+ * 3. Accommodation
+ * 4. Interests
+ */
 
-function HomeContent() {
-  const searchParams = useSearchParams();
+import { FormProvider, useFormContext } from '@/contexts/FormContext';
+import BudgetBasicsStep from '@/components/steps/BudgetBasicsStep';
+import TravelStyleStep from '@/components/steps/TravelStyleStep';
+import AccommodationStep from '@/components/steps/AccommodationStep';
+import InterestsStep from '@/components/steps/InterestsStep';
 
-  // Read initial values from URL params (for "Change trip details" flow)
-  const initialValues = {
-    originCity: searchParams.get('originCity') || '',
-    destination: searchParams.get('destination') || '',
-    startDate: searchParams.get('startDate') || '',
-    numberOfDays: parseInt(searchParams.get('days') || '') || 5,
-    budgetTotal: parseInt(searchParams.get('budget') || '') || 2000,
-    travelStyle: (searchParams.get('style') as 'BUDGET' | 'BALANCED') || 'BALANCED',
-  };
+function MultiStepForm() {
+  const { currentStep } = useFormContext();
 
-  // Only pass initial values if originCity is present (indicates coming from confirm page)
-  const hasInitialValues = searchParams.get('originCity');
+  const steps = [
+    { number: 1, label: 'Budget Basics' },
+    { number: 2, label: 'Travel Style' },
+    { number: 3, label: 'Accommodation' },
+    { number: 4, label: 'Interests' },
+  ];
 
   return (
-    <div className="py-8">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-3">
-          Plan your next trip
-        </h1>
-        <p className="text-gray-600 max-w-md mx-auto">
-          Tell us where you&apos;re coming from, your budget, and we&apos;ll
-          find destinations that work for you.
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-white">
+      <div className="max-w-6xl mx-auto px-4 py-12">
+        {/* Progress Indicator */}
+        <div className="mb-12">
+          <div className="flex justify-between items-center max-w-2xl mx-auto">
+            {steps.map((step, index) => (
+              <div key={step.number} className="flex items-center flex-1">
+                {/* Step Circle */}
+                <div className="flex flex-col items-center">
+                  <div
+                    className={`w-12 h-12 rounded-full flex items-center justify-center font-semibold transition-all ${
+                      currentStep === step.number
+                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg scale-110'
+                        : currentStep > step.number
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-200 text-gray-500'
+                    }`}
+                  >
+                    {currentStep > step.number ? '✓' : step.number}
+                  </div>
+                  <span
+                    className={`text-xs mt-2 font-medium ${
+                      currentStep === step.number
+                        ? 'text-purple-600'
+                        : currentStep > step.number
+                        ? 'text-green-600'
+                        : 'text-gray-400'
+                    }`}
+                  >
+                    {step.label}
+                  </span>
+                </div>
 
-      <TripInputForm initialValues={hasInitialValues ? initialValues : undefined} />
+                {/* Connector Line */}
+                {index < steps.length - 1 && (
+                  <div
+                    className={`flex-1 h-1 mx-2 transition-all ${
+                      currentStep > step.number
+                        ? 'bg-green-500'
+                        : 'bg-gray-200'
+                    }`}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Step Content */}
+        <div className="mt-8">
+          {currentStep === 1 && <BudgetBasicsStep />}
+          {currentStep === 2 && <TravelStyleStep />}
+          {currentStep === 3 && <AccommodationStep />}
+          {currentStep === 4 && <InterestsStep />}
+        </div>
+      </div>
     </div>
   );
 }
 
 export default function Home() {
   return (
-    <Suspense
-      fallback={
-        <div className="py-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-3">
-              Plan your next trip
-            </h1>
-            <p className="text-gray-600 max-w-md mx-auto">Loading...</p>
-          </div>
-        </div>
-      }
-    >
-      <HomeContent />
-    </Suspense>
+    <FormProvider>
+      <MultiStepForm />
+    </FormProvider>
   );
 }

@@ -20,17 +20,20 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} antialiased bg-gray-50`}>
         <div className="min-h-screen">
-          {/* Header */}
-          <header className="bg-white border-b border-gray-200">
-            <div className="max-w-4xl mx-auto px-4 py-4">
-              <a href="/" className="text-xl font-bold text-blue-600">
+          {/* Header - Phase 10: Purple gradient accent */}
+          <header className="bg-white border-b border-gray-200 shadow-sm">
+            <div className="max-w-6xl mx-auto px-4 py-4">
+              <a
+                href="/"
+                className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent hover:from-purple-700 hover:to-pink-700 transition-all"
+              >
                 TripOptimizer
               </a>
             </div>
           </header>
 
           {/* Main Content */}
-          <main className="max-w-4xl mx-auto px-4 py-8">{children}</main>
+          <main className="max-w-6xl mx-auto px-4">{children}</main>
         </div>
       </body>
     </html>
