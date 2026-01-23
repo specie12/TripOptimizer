@@ -12,6 +12,7 @@ import verificationRoutes from './routes/verification.routes';
 import agentRoutes from './routes/agent.routes';
 import { lockdownRouter } from './routes/lockdown.routes';
 import { budgetRouter } from './routes/budget.routes'; // Phase 5: Budget tracking
+import { optimizationRouter } from './routes/optimization.routes'; // Phase 6: Optimization
 import { errorHandler } from './middleware/validation';
 
 // Import agent system
@@ -48,6 +49,7 @@ app.use('/verify', verificationRoutes);
 app.use('/agents', agentRoutes);
 app.use('/lockdown', lockdownRouter); // Phase 2: Lock-down mechanism
 app.use('/budget', budgetRouter); // Phase 5: Budget & spend tracking
+app.use('/optimization', optimizationRouter); // Phase 6: Continuous optimization
 
 // Root endpoint
 app.get('/', (req, res) => {
