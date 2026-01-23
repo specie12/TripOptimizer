@@ -81,7 +81,7 @@ export default function InterestsStep() {
     // Build query params for results page
     const params = new URLSearchParams({
       budget: formData.budgetTotal.toString(),
-      origin: formData.originCity,
+      originCity: formData.originCity,
       days: formData.numberOfDays.toString(),
       style: formData.travelStyle,
     });
