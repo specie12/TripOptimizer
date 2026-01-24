@@ -1,11 +1,19 @@
 /**
  * Booking Agent
  *
- * Manages actual booking process:
- * - Validates availability before booking
- * - Executes bookings through integrated APIs
- * - Handles confirmations and receipts
- * - Manages modifications and cancellations
+ * ⚠️ DEPRECATED - Stub Implementation
+ *
+ * This stub will be replaced with BookingOrchestratorService in Phase 2.
+ * See src/agents/README.md for migration guide.
+ *
+ * PHASE 2 REPLACEMENT:
+ * - New file: src/services/booking-orchestrator.service.ts
+ * - Real booking via Amadeus API + Stripe
+ * - Booking state machine (PENDING → VALIDATING → PROCESSING → CONFIRMED)
+ *
+ * DO NOT USE THIS IN NEW CODE.
+ *
+ * @deprecated Will be replaced by BookingOrchestratorService in Phase 2
  */
 
 import { Agent } from './base.agent';

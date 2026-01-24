@@ -1,12 +1,19 @@
 /**
  * Exception Agent
  *
- * Handles disruptions and problems:
- * - Manages cancellations and rebooking
- * - Handles schedule conflicts
- * - Processes refunds and credits
- * - Resolves booking failures
- * - Coordinates recovery from disruptions
+ * ⚠️ DEPRECATED - Phase 1 Refactoring
+ *
+ * Exception handling should be done via standard error handling patterns.
+ * See src/agents/README.md for migration guide.
+ *
+ * NEW APPROACH:
+ * - Use try/catch blocks
+ * - Use Express error middleware
+ * - Log errors to console/monitoring service
+ *
+ * DO NOT USE THIS IN NEW CODE.
+ *
+ * @deprecated Use standard error handling patterns instead
  */
 
 import { Agent } from './base.agent';

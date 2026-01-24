@@ -1,8 +1,19 @@
 /**
  * Orchestrator Agent
  *
- * Central coordinator that manages the entire trip lifecycle.
- * Routes tasks to specialized agents and aggregates their responses.
+ * ⚠️ DEPRECATED - Phase 1 Refactoring
+ *
+ * This agent-based orchestration has been replaced with direct service calls.
+ * See src/agents/README.md for migration guide.
+ *
+ * NEW APPROACH:
+ * - Use services directly (budget.service.ts, candidate.service.ts, etc.)
+ * - AI only used through 4 defined agents in ai-agent.service.ts
+ * - No message-passing overhead
+ *
+ * DO NOT USE THIS IN NEW CODE.
+ *
+ * @deprecated Use direct service orchestration in trip.service.ts instead
  */
 
 import { Agent } from './base.agent';

@@ -1,13 +1,19 @@
 /**
  * Budget Agent
  *
- * Manages all financial aspects of trips:
- * - Budget allocation across categories
- * - Spend tracking and remaining budget calculation
- * - Budget constraint enforcement
- * - Budget health reports and alerts
+ * ⚠️ DEPRECATED - Phase 1 Refactoring
  *
- * Phase 1: Integrated with budget.service.ts for 6-category allocation
+ * Budget allocation is now handled directly by budget.service.ts (deterministic, no agent needed).
+ * See src/agents/README.md for migration guide.
+ *
+ * NEW APPROACH:
+ * - Import { allocateExtendedBudget } from '../services/budget.service'
+ * - Direct function call, no agent wrapper
+ * - 100% deterministic, no AI involved
+ *
+ * DO NOT USE THIS IN NEW CODE.
+ *
+ * @deprecated Use budget.service.ts directly instead
  */
 
 import { Agent } from './base.agent';

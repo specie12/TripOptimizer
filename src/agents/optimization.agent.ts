@@ -1,12 +1,19 @@
 /**
  * Optimization Agent
  *
- * Continuously finds better options within constraints:
- * - Monitors prices for unlocked items
- * - Identifies savings opportunities
- * - Generates alternative recommendations
- * - Ranks options by value
- * - PHASE 2: Respects lock-down status (LOCKED/CONFIRMED items protected)
+ * ⚠️ DEPRECATED - Phase 1 Refactoring
+ *
+ * Optimization logic is now handled directly by optimization.service.ts (deterministic, no agent needed).
+ * See src/agents/README.md for migration guide.
+ *
+ * NEW APPROACH:
+ * - Import { monitorPrices, triggerReOptimization } from '../services/optimization.service'
+ * - Direct function calls, no agent wrapper
+ * - 100% deterministic, no AI involved
+ *
+ * DO NOT USE THIS IN NEW CODE.
+ *
+ * @deprecated Use optimization.service.ts directly instead
  */
 
 import { Agent } from './base.agent';
