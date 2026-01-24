@@ -194,6 +194,8 @@ model TripOption {
   hotelOption     HotelOption?
   activityOptions ActivityOption[] // Phase 3: Multiple activities per trip
   interactionEvents InteractionEvent[]
+  bookings        Booking[]        // Phase 2: Actual bookings
+  payments        Payment[]        // Phase 2: Payment transactions
 
   @@index([tripRequestId])
   @@index([lockStatus])
@@ -365,4 +367,78 @@ model SpendRecord {
   @@index([tripRequestId])
   @@index([category])
   @@index([recordedAt])
+}
+
+/// Tracks actual bookings made through the system (Phase 2)
+/// Implements booking state machine and rollback logic
+model Booking {
+  id                String         @id @default(uuid()) @db.Uuid
+  tripOptionId      String         @db.Uuid
+  tripOption        TripOption     @relation(fields: [tripOptionId], references: [id], onDelete: Cascade)
+
+  // Booking metadata
+  bookingType       String         // FLIGHT, HOTEL, ACTIVITY
+  componentId       String         @db.Uuid // References FlightOption/HotelOption/ActivityOption
+
+  // Booking status and state
+  status            String         // PENDING, CONFIRMED, CANCELLED, FAILED
+  state             String         @default("PENDING") // Booking state machine state
+
+  // Confirmation details
+  vendorConfirmation String?       // Vendor's confirmation code
+  bookingReference   String?       // Our internal booking reference
+  pnr                String?       // Passenger Name Record (flights only)
+
+  // Payment tracking
+  paymentIntentId    String?       // Stripe payment intent ID
+  amount             Int           // Amount paid in cents
+  currency           String        @default("USD")
+
+  // Timestamps
+  bookedAt           DateTime?     // When the booking was confirmed
+  cancelledAt        DateTime?     // When the booking was cancelled
+
+  // Booking details (JSON for flexibility)
+  bookingDetails     Json?         // Full confirmation details
+
+  // Error tracking
+  error              String?       @db.Text // Error message if failed
+
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([tripOptionId])
+  @@index([status])
+  @@index([bookingType])
+}
+
+/// Tracks payment transactions for bookings (Phase 2)
+/// Enables refunds and payment tracking
+model Payment {
+  id                String    @id @default(uuid()) @db.Uuid
+  tripOptionId      String    @db.Uuid
+  tripOption        TripOption @relation(fields: [tripOptionId], references: [id], onDelete: Cascade)
+
+  // Stripe payment details
+  paymentIntentId   String    @unique // Stripe payment intent ID
+  chargeId          String?   // Stripe charge ID
+  amount            Int       // Amount in cents
+  currency          String    @default("USD")
+  status            String    // succeeded, pending, failed, refunded
+
+  // Refund tracking
+  refundId          String?   // Stripe refund ID if refunded
+  refundAmount      Int?      // Amount refunded in cents
+  refundedAt        DateTime? // When refunded
+
+  // Metadata
+  paymentMethodId   String?   // Stripe payment method ID
+  billingDetails    Json?     // Billing information
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([tripOptionId])
+  @@index([paymentIntentId])
+  @@index([status])
 }

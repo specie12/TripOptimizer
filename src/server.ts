@@ -13,6 +13,7 @@ import agentRoutes from './routes/agent.routes';
 import { lockdownRouter } from './routes/lockdown.routes';
 import { budgetRouter } from './routes/budget.routes'; // Phase 5: Budget tracking
 import { optimizationRouter } from './routes/optimization.routes'; // Phase 6: Optimization
+import bookingRoutes from './routes/booking.routes'; // Phase 2: Booking orchestration
 import { errorHandler } from './middleware/validation';
 
 // Import agent system
@@ -50,6 +51,7 @@ app.use('/agents', agentRoutes);
 app.use('/lockdown', lockdownRouter); // Phase 2: Lock-down mechanism
 app.use('/budget', budgetRouter); // Phase 5: Budget & spend tracking
 app.use('/optimization', optimizationRouter); // Phase 6: Continuous optimization
+app.use('/booking', bookingRoutes); // Phase 2: Booking orchestration
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -75,6 +77,9 @@ app.get('/', (req, res) => {
       'GET /lockdown/status/:id': 'Get lock status for trip option (Phase 2)',
       'GET /lockdown/trip/:id': 'Get all locked items for trip (Phase 2)',
       'GET /lockdown/health': 'Lock-down service health check',
+      'POST /booking/book': 'Book a complete trip (Phase 2)',
+      'POST /booking/cancel': 'Cancel a booking (Phase 2)',
+      'GET /booking/:id': 'Get booking details (Phase 2)',
     },
   });
 });
