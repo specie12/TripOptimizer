@@ -101,6 +101,9 @@ export default function InterestsStep() {
     if (formData.interests && formData.interests.length > 0) {
       params.set('interests', formData.interests.join(','));
     }
+    if (formData.numberOfTravelers) {
+      params.set('travelers', formData.numberOfTravelers.toString());
+    }
 
     // Navigate to results page
     router.push(`/results?${params.toString()}`);

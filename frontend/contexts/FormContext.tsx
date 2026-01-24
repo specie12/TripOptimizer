@@ -68,7 +68,7 @@ function parseSearchParamsToFormData(params: URLSearchParams): ExtendedFormData 
     tripPace: (params.get('pace') as any) || 'BALANCED',
     accommodationType: params.get('accommodation') as any,
     interests: params.get('interests')?.split(',').filter(Boolean) || [],
-    numberOfTravelers: 2, // Not passed in URL, use default
+    numberOfTravelers: parseInt(params.get('travelers') || '2'),
     departureDate: params.get('startDate') || '',
   };
 }

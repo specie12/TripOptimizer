@@ -22,6 +22,7 @@ function buildEditUrl(params: {
   pace?: string | null;
   accommodation?: string | null;
   interests?: string | null;
+  travelers?: string | null;
 }): string {
   const searchParams = new URLSearchParams({
     originCity: params.originCity,
@@ -35,6 +36,7 @@ function buildEditUrl(params: {
   if (params.pace) searchParams.set('pace', params.pace);
   if (params.accommodation) searchParams.set('accommodation', params.accommodation);
   if (params.interests) searchParams.set('interests', params.interests);
+  if (params.travelers) searchParams.set('travelers', params.travelers);
 
   return `/?${searchParams.toString()}`;
 }
@@ -51,6 +53,7 @@ function ResultsContent() {
   const pace = searchParams.get('pace');
   const accommodation = searchParams.get('accommodation');
   const interests = searchParams.get('interests');
+  const travelers = searchParams.get('travelers');
 
   const budgetCents = dollarsToCents(budgetDollars);
 
@@ -134,6 +137,7 @@ function ResultsContent() {
             pace,
             accommodation,
             interests,
+            travelers,
           })}
           className="flex items-center gap-2 px-4 py-2 md:px-6 md:py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg text-sm md:text-base whitespace-nowrap"
         >
