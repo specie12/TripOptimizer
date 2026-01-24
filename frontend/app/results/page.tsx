@@ -9,6 +9,36 @@ import { trackTripView } from '@/lib/tracking';
 import TripCard from '@/components/TripCard';
 import ProPlanningUpsell from '@/components/monetization/ProPlanningUpsell';
 
+/**
+ * Build Edit URL with all search parameters
+ */
+function buildEditUrl(params: {
+  originCity: string;
+  destination?: string;
+  startDate?: string;
+  days: number;
+  budgetDollars: number;
+  style: string;
+  pace?: string | null;
+  accommodation?: string | null;
+  interests?: string | null;
+}): string {
+  const searchParams = new URLSearchParams({
+    originCity: params.originCity,
+    days: params.days.toString(),
+    budget: params.budgetDollars.toString(),
+    style: params.style,
+  });
+
+  if (params.destination) searchParams.set('destination', params.destination);
+  if (params.startDate) searchParams.set('startDate', params.startDate);
+  if (params.pace) searchParams.set('pace', params.pace);
+  if (params.accommodation) searchParams.set('accommodation', params.accommodation);
+  if (params.interests) searchParams.set('interests', params.interests);
+
+  return `/?${searchParams.toString()}`;
+}
+
 function ResultsContent() {
   const searchParams = useSearchParams();
 
@@ -18,6 +48,9 @@ function ResultsContent() {
   const days = parseInt(searchParams.get('days') || '5');
   const budgetDollars = parseInt(searchParams.get('budget') || '2000');
   const style = (searchParams.get('style') as 'BUDGET' | 'BALANCED') || 'BALANCED';
+  const pace = searchParams.get('pace');
+  const accommodation = searchParams.get('accommodation');
+  const interests = searchParams.get('interests');
 
   const budgetCents = dollarsToCents(budgetDollars);
 
@@ -76,16 +109,38 @@ function ResultsContent() {
   return (
     <div className="py-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          {destination
-            ? `Trips from ${originCity} to ${destination}`
-            : `Trips from ${originCity}`}
-        </h1>
-        <p className="text-gray-600">
-          {days} days &middot; {formatCurrency(budgetCents)} budget
-          {startDate && ` &middot; Departing ${new Date(startDate + 'T00:00:00').toLocaleDateString()}`}
-        </p>
+      <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            {destination
+              ? `Trips from ${originCity} to ${destination}`
+              : `Trips from ${originCity}`}
+          </h1>
+          <p className="text-gray-600">
+            {days} days &middot; {formatCurrency(budgetCents)} budget
+            {startDate && ` &middot; Departing ${new Date(startDate + 'T00:00:00').toLocaleDateString()}`}
+          </p>
+        </div>
+
+        {/* Edit Search Button */}
+        <a
+          href={buildEditUrl({
+            originCity,
+            destination,
+            startDate,
+            days,
+            budgetDollars,
+            style,
+            pace,
+            accommodation,
+            interests,
+          })}
+          className="flex items-center gap-2 px-4 py-2 md:px-6 md:py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg text-sm md:text-base whitespace-nowrap"
+        >
+          <span className="hidden md:inline">✏️</span>
+          <span className="md:hidden">Edit</span>
+          <span className="hidden md:inline">Edit Search</span>
+        </a>
       </div>
 
       {/* Loading State */}

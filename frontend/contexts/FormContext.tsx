@@ -10,7 +10,8 @@
  * - Step 4: Interests (multi-select interests)
  */
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { TripFormData } from '../lib/types';
 
 // Extended form data to include all new Phase 7 fields
@@ -53,8 +54,37 @@ const defaultFormData: ExtendedFormData = {
   departureDate: '',
 };
 
+/**
+ * Parse URL search params into FormData structure (for Edit mode)
+ */
+function parseSearchParamsToFormData(params: URLSearchParams): ExtendedFormData {
+  return {
+    originCity: params.get('originCity') || '',
+    destination: params.get('destination') || '',
+    startDate: params.get('startDate') || '',
+    numberOfDays: parseInt(params.get('days') || '7'),
+    budgetTotal: parseInt(params.get('budget') || '2000'),
+    travelStyle: (params.get('style') as any) || 'MID_RANGE',
+    tripPace: (params.get('pace') as any) || 'BALANCED',
+    accommodationType: params.get('accommodation') as any,
+    interests: params.get('interests')?.split(',').filter(Boolean) || [],
+    numberOfTravelers: 2, // Not passed in URL, use default
+    departureDate: params.get('startDate') || '',
+  };
+}
+
 export function FormProvider({ children }: { children: ReactNode }) {
-  const [formData, setFormData] = useState<ExtendedFormData>(defaultFormData);
+  const searchParams = useSearchParams();
+
+  // Check if we're in edit mode (URL has params from results page)
+  const hasEditParams = searchParams.has('originCity');
+
+  // Initialize from URL if in edit mode, else use defaults
+  const initialFormData = hasEditParams
+    ? parseSearchParamsToFormData(searchParams)
+    : defaultFormData;
+
+  const [formData, setFormData] = useState<ExtendedFormData>(initialFormData);
   const [currentStep, setCurrentStep] = useState(1);
 
   const updateFormData = (data: Partial<ExtendedFormData>) => {

@@ -10,6 +10,7 @@
  * 4. Interests
  */
 
+import { Suspense } from 'react';
 import { FormProvider, useFormContext } from '@/contexts/FormContext';
 import BudgetBasicsStep from '@/components/steps/BudgetBasicsStep';
 import TravelStyleStep from '@/components/steps/TravelStyleStep';
@@ -89,8 +90,19 @@ function MultiStepForm() {
 
 export default function Home() {
   return (
-    <FormProvider>
-      <MultiStepForm />
-    </FormProvider>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-white">
+          <div className="max-w-6xl mx-auto px-4 py-12 text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-purple-600 border-t-transparent mb-4"></div>
+            <p className="text-gray-600">Loading form...</p>
+          </div>
+        </div>
+      }
+    >
+      <FormProvider>
+        <MultiStepForm />
+      </FormProvider>
+    </Suspense>
   );
 }
