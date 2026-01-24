@@ -67,10 +67,10 @@ export function validateGenerateTripRequest(
       field: 'travelStyle',
       message: 'travelStyle is required',
     });
-  } else if (!['BUDGET', 'BALANCED'].includes(body.travelStyle)) {
+  } else if (!['BUDGET', 'MID_RANGE', 'BALANCED', 'LUXURY'].includes(body.travelStyle)) {
     errors.push({
       field: 'travelStyle',
-      message: 'travelStyle must be either "BUDGET" or "BALANCED"',
+      message: 'travelStyle must be one of: "BUDGET", "MID_RANGE", "BALANCED", or "LUXURY"',
     });
   }
 
@@ -133,6 +133,54 @@ export function validateGenerateTripRequest(
         field: 'userId',
         message: 'userId, if provided, must be a non-empty string',
       });
+    }
+  }
+
+  // Optional: tripPace (Phase 7)
+  if (body.tripPace !== undefined && body.tripPace !== null) {
+    if (!['RELAXED', 'BALANCED', 'PACKED'].includes(body.tripPace)) {
+      errors.push({
+        field: 'tripPace',
+        message: 'tripPace, if provided, must be one of: "RELAXED", "BALANCED", or "PACKED"',
+      });
+    }
+  }
+
+  // Optional: accommodationType (Phase 7)
+  if (body.accommodationType !== undefined && body.accommodationType !== null) {
+    if (!['HOTELS', 'AIRBNB', 'RESORTS', 'HOSTELS'].includes(body.accommodationType)) {
+      errors.push({
+        field: 'accommodationType',
+        message: 'accommodationType, if provided, must be one of: "HOTELS", "AIRBNB", "RESORTS", or "HOSTELS"',
+      });
+    }
+  }
+
+  // Optional: interests (Phase 7)
+  if (body.interests !== undefined && body.interests !== null) {
+    if (!Array.isArray(body.interests)) {
+      errors.push({
+        field: 'interests',
+        message: 'interests, if provided, must be an array',
+      });
+    } else {
+      const validInterests = [
+        'CULTURE_HISTORY',
+        'FOOD_DINING',
+        'ADVENTURE',
+        'BEACH_RELAXATION',
+        'NIGHTLIFE',
+        'NATURE_WILDLIFE',
+        'SHOPPING',
+        'ART_MUSEUMS',
+      ];
+      const invalidInterests = body.interests.filter((i) => !validInterests.includes(i));
+      if (invalidInterests.length > 0) {
+        errors.push({
+          field: 'interests',
+          message: `interests contains invalid values: ${invalidInterests.join(', ')}`,
+        });
+      }
     }
   }
 
