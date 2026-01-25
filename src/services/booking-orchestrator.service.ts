@@ -23,6 +23,7 @@ import {
   BookTripRequest,
   BookTripResponse,
   BookingState,
+  BookingType,
   ValidationRequest,
   ValidationResult,
   CancelBookingRequest,
@@ -273,8 +274,8 @@ async function validateBooking(request: ValidationRequest): Promise<ValidationRe
       return {
         success: false,
         validationDetails: {
-          flight: { componentType: 'FLIGHT', componentId: '', available: false, verified: false },
-          hotel: { componentType: 'HOTEL', componentId: '', available: false, verified: false },
+          flight: { componentType: BookingType.FLIGHT as any, componentId: '', available: false, verified: false },
+          hotel: { componentType: BookingType.HOTEL as any, componentId: '', available: false, verified: false },
           activities: [],
         },
         error: 'Trip option not found',
@@ -283,7 +284,7 @@ async function validateBooking(request: ValidationRequest): Promise<ValidationRe
 
     // Validate flight
     const flightValidation = {
-      componentType: 'FLIGHT' as const,
+      componentType: BookingType.FLIGHT as any,
       componentId: tripOption.flightOption?.id || '',
       available: true, // TODO: Check with Amadeus API
       verified: true,
@@ -291,15 +292,13 @@ async function validateBooking(request: ValidationRequest): Promise<ValidationRe
 
     // Validate hotel
     const hotelVerification = await verifyEntity({
-      entityType: 'hotel',
-      name: tripOption.hotelOption?.name || '',
-      location: {
-        city: tripOption.destination,
-      },
+      entityType: 'HOTEL',
+      entityName: tripOption.hotelOption?.name || '',
+      city: tripOption.destination,
     });
 
     const hotelValidation = {
-      componentType: 'HOTEL' as const,
+      componentType: BookingType.HOTEL as any,
       componentId: tripOption.hotelOption?.id || '',
       available: true, // TODO: Check with Booking.com API
       verified: hotelVerification.result.verificationStatus === 'VERIFIED',
@@ -313,7 +312,7 @@ async function validateBooking(request: ValidationRequest): Promise<ValidationRe
     if (tripOption.activityOptions) {
       for (const activity of tripOption.activityOptions) {
         activityValidations.push({
-          componentType: 'ACTIVITY' as const,
+          componentType: BookingType.ACTIVITY as any,
           componentId: activity.id,
           available: true, // TODO: Check with activity provider API
           verified: true,
@@ -334,8 +333,8 @@ async function validateBooking(request: ValidationRequest): Promise<ValidationRe
     return {
       success: false,
       validationDetails: {
-        flight: { componentType: 'FLIGHT', componentId: '', available: false, verified: false },
-        hotel: { componentType: 'HOTEL', componentId: '', available: false, verified: false },
+        flight: { componentType: BookingType.FLIGHT as any, componentId: '', available: false, verified: false },
+        hotel: { componentType: BookingType.HOTEL as any, componentId: '', available: false, verified: false },
         activities: [],
       },
       error: error instanceof Error ? error.message : 'Validation error',
@@ -533,7 +532,7 @@ async function saveBookingConfirmations(
     await prisma.booking.create({
       data: {
         tripOptionId,
-        bookingType: 'FLIGHT',
+        bookingType: BookingType.FLIGHT,
         componentId: tripOptionId, // TODO: Use actual flight option ID
         status: 'CONFIRMED',
         state: 'CONFIRMED',
@@ -543,7 +542,7 @@ async function saveBookingConfirmations(
         amount: state.confirmations.flight.totalPrice,
         currency: state.confirmations.flight.currency,
         bookedAt: new Date(),
-        bookingDetails: state.confirmations.flight,
+        bookingDetails: state.confirmations.flight as any,
       },
     });
   }
@@ -553,7 +552,7 @@ async function saveBookingConfirmations(
     await prisma.booking.create({
       data: {
         tripOptionId,
-        bookingType: 'HOTEL',
+        bookingType: BookingType.HOTEL,
         componentId: tripOptionId, // TODO: Use actual hotel option ID
         status: 'CONFIRMED',
         state: 'CONFIRMED',
@@ -562,7 +561,7 @@ async function saveBookingConfirmations(
         amount: state.confirmations.hotel.totalPrice,
         currency: state.confirmations.hotel.currency,
         bookedAt: new Date(),
-        bookingDetails: state.confirmations.hotel,
+        bookingDetails: state.confirmations.hotel as any,
       },
     });
   }
@@ -572,7 +571,7 @@ async function saveBookingConfirmations(
     await prisma.booking.create({
       data: {
         tripOptionId,
-        bookingType: 'ACTIVITY',
+        bookingType: BookingType.ACTIVITY,
         componentId: tripOptionId, // TODO: Use actual activity option ID
         status: 'CONFIRMED',
         state: 'CONFIRMED',
@@ -581,7 +580,7 @@ async function saveBookingConfirmations(
         amount: activity.totalPrice,
         currency: activity.currency,
         bookedAt: new Date(),
-        bookingDetails: activity,
+        bookingDetails: activity as any,
       },
     });
   }

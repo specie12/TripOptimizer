@@ -25,7 +25,9 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
     "@prisma/client": "^5.0.0",
+    "@types/stripe": "^8.0.416",
     "express": "^5.2.1",
+    "stripe": "^20.2.0",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
