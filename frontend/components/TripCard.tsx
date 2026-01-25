@@ -19,6 +19,7 @@ import WhyThisWorks from './WhyThisWorks';
 import TripDetails from './TripDetails';
 import AffiliateDisclosure from './monetization/AffiliateDisclosure';
 import ActivityCard from './ActivityCard';
+import BookingModal from './BookingModal';
 
 interface TripCardProps {
   tripOption: TripOptionResponse;
@@ -28,6 +29,7 @@ interface TripCardProps {
 export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
   const [showDetails, setShowDetails] = useState(false);
   const [explanationExpanded, setExplanationExpanded] = useState(false);
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
 
   const handleExpandExplanation = () => {
     if (!explanationExpanded) {
@@ -216,42 +218,57 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
 
       {/* Bottom Section - Booking Actions */}
       <div className="px-6 pb-6 border-t border-gray-100 pt-6">
-        <div className="flex flex-wrap gap-3 mb-4">
-          <a
-            href={tripOption.flight.deepLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 min-w-[140px] py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors text-center"
-            onClick={() =>
-              import('@/lib/tracking').then(({ trackBookFlightClick }) =>
-                trackBookFlightClick(
-                  tripOption.id,
-                  tripOption.destination,
-                  tripOption.flight.provider
-                )
-              )
-            }
-          >
-            Book Flight
-          </a>
+        {/* Primary CTA: Book Complete Trip */}
+        <button
+          onClick={() => setBookingModalOpen(true)}
+          className="w-full py-4 px-6 bg-gradient-to-r from-green-600 to-green-700 text-white font-bold rounded-xl hover:from-green-700 hover:to-green-800 transition-all shadow-lg mb-4 flex items-center justify-center gap-2"
+        >
+          <span className="text-lg">🎉</span>
+          <span>Book Complete Trip - {formatCurrency(tripOption.totalCost)}</span>
+        </button>
 
-          <a
-            href={tripOption.hotel.deepLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 min-w-[140px] py-3 px-4 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors text-center"
-            onClick={() =>
-              import('@/lib/tracking').then(({ trackBookHotelClick }) =>
-                trackBookHotelClick(
-                  tripOption.id,
-                  tripOption.destination,
-                  tripOption.hotel.name
+        {/* Secondary Options: Individual Booking */}
+        <div className="mb-4">
+          <p className="text-xs text-gray-500 text-center mb-3">
+            Or book components separately:
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <a
+              href={tripOption.flight.deepLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 min-w-[140px] py-2 px-4 bg-blue-100 text-blue-700 font-semibold rounded-lg hover:bg-blue-200 transition-colors text-center text-sm"
+              onClick={() =>
+                import('@/lib/tracking').then(({ trackBookFlightClick }) =>
+                  trackBookFlightClick(
+                    tripOption.id,
+                    tripOption.destination,
+                    tripOption.flight.provider
+                  )
                 )
-              )
-            }
-          >
-            Book Hotel
-          </a>
+              }
+            >
+              ✈️ Flight Only
+            </a>
+
+            <a
+              href={tripOption.hotel.deepLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 min-w-[140px] py-2 px-4 bg-purple-100 text-purple-700 font-semibold rounded-lg hover:bg-purple-200 transition-colors text-center text-sm"
+              onClick={() =>
+                import('@/lib/tracking').then(({ trackBookHotelClick }) =>
+                  trackBookHotelClick(
+                    tripOption.id,
+                    tripOption.destination,
+                    tripOption.hotel.name
+                  )
+                )
+              }
+            >
+              🏨 Hotel Only
+            </a>
+          </div>
         </div>
 
         {/* Affiliate Disclosure */}
@@ -259,9 +276,16 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
 
         {/* Reassurance Copy */}
         <p className="text-sm text-gray-500 text-center">
-          Nothing is booked yet. Review details before booking.
+          Secure payment powered by Stripe. Nothing is charged until you confirm.
         </p>
       </div>
+
+      {/* Booking Modal */}
+      <BookingModal
+        tripOption={tripOption}
+        isOpen={bookingModalOpen}
+        onClose={() => setBookingModalOpen(false)}
+      />
 
       {/* Expandable Trip Details */}
       {showDetails && (
