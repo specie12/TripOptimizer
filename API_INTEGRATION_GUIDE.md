@@ -43,6 +43,51 @@ Currently, the following components use **stub implementations**:
    - Decline: `4000 0000 0000 0002`
    - 3D Secure: `4000 0025 0000 3155`
 
+### Production / Live Mode Setup
+
+1. **Activate Account**:
+   - Complete Stripe account activation (business verification)
+   - Add bank account for payouts
+   - Complete tax information
+
+2. **Get Live API Keys**:
+   - Dashboard → Developers → API keys
+   - Toggle to "Live mode" (switch in top right)
+   - Copy "Secret key" (starts with `sk_live_`)
+   - Create webhook endpoint for live mode
+   - Copy webhook secret (starts with `whsec_`)
+
+3. **Update `.env` for Production**:
+   ```bash
+   # Stripe Configuration (PRODUCTION)
+   STRIPE_SECRET_KEY=sk_live_YOUR_LIVE_KEY_HERE
+   STRIPE_WEBHOOK_SECRET=whsec_YOUR_LIVE_WEBHOOK_SECRET_HERE
+   MOCK_STRIPE=false  # Must be false for live mode
+   ```
+
+4. **Important Production Considerations**:
+   - ✅ Enable 3D Secure authentication for all payments
+   - ✅ Set up webhook endpoints for payment confirmations
+   - ✅ Implement proper error handling for declined cards
+   - ✅ Monitor Stripe dashboard for chargebacks/disputes
+   - ✅ Set up email receipts for customers
+   - ✅ Comply with PCI-DSS requirements (Stripe handles most)
+   - ⚠️ Test thoroughly with small transactions first
+
+5. **Webhook Configuration**:
+   ```
+   Endpoint URL: https://your-domain.com/webhooks/stripe
+   Events to listen for:
+   - payment_intent.succeeded
+   - payment_intent.payment_failed
+   - charge.refunded
+   - charge.dispute.created
+   ```
+
+6. **Rate Limits (Live Mode)**:
+   - 100 requests per second (default)
+   - Can be increased upon request
+
 ### Usage
 
 ```typescript

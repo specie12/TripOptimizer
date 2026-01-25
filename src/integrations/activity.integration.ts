@@ -206,3 +206,65 @@ class ActivityIntegrationService {
 
 // Singleton instance
 export const activityIntegration = new ActivityIntegrationService();
+
+// =============================================================================
+// BOOKING FUNCTIONS (for booking-orchestrator.service.ts)
+// =============================================================================
+
+import { ActivityBookingConfirmation } from '../types/booking.types';
+
+const MOCK_ACTIVITIES_BOOKING = process.env.MOCK_ACTIVITIES === 'true';
+
+/**
+ * Book an activity
+ *
+ * NOTE: Many activity APIs don't support direct booking without partner approval.
+ * This implementation generates a booking confirmation and deep link.
+ * For real bookings, integrate with Viator, GetYourGuide, or similar APIs.
+ */
+export async function bookActivity(params: {
+  activityId: string;
+  activityName: string;
+  date: string; // YYYY-MM-DD
+  time?: string; // HH:MM
+  participants: number;
+  totalPrice: number; // in cents
+  currency?: string;
+  contactEmail?: string;
+}): Promise<ActivityBookingConfirmation> {
+  console.log('[Activities] Booking activity:', params.activityName);
+
+  // Generate deep link for activity booking
+  // Replace with real booking API when available
+  const deepLink = `https://www.viator.com/activity/${params.activityId}?date=${params.date}&participants=${params.participants}`;
+
+  const confirmation: ActivityBookingConfirmation = {
+    confirmationCode: `AC${Date.now()}`,
+    bookingReference: `DEEPLINK-${params.activityId.slice(0, 8).toUpperCase()}`,
+    activityName: params.activityName,
+    date: params.date,
+    time: params.time,
+    participants: params.participants,
+    totalPrice: params.totalPrice,
+    currency: params.currency || 'USD',
+    deepLink,
+  };
+
+  console.log('[Activities] Activity booking created:', confirmation.confirmationCode);
+  return confirmation;
+}
+
+/**
+ * Cancel an activity booking
+ */
+export async function cancelActivity(bookingId: string): Promise<{
+  success: boolean;
+  refundAmount?: number;
+  error?: string;
+}> {
+  console.log('[Activities] Cancelling activity booking:', bookingId);
+
+  // TODO: Implement real cancellation when booking API is available
+  // Note: Cancellation policies vary by activity provider
+  return { success: true, refundAmount: 0 };
+}

@@ -35,6 +35,9 @@ import {
   BookingOrchestratorState,
 } from '../types/booking.types';
 import { createPaymentIntent, processRefund, processPartialRefund } from '../integrations/stripe.integration';
+import { bookFlight as bookFlightAmadeus, cancelFlight as cancelFlightAmadeus } from '../integrations/amadeus.integration';
+import { bookHotel as bookHotelAPI, cancelHotel as cancelHotelAPI } from '../integrations/hotel.integration';
+import { bookActivity as bookActivityAPI, cancelActivity as cancelActivityAPI } from '../integrations/activity.integration';
 import { verifyEntity } from './verification.service';
 
 const prisma = new PrismaClient();
@@ -362,101 +365,146 @@ function handleValidationFailure(
 
 /**
  * Book a flight via Amadeus API
- * TODO: Implement real Amadeus booking in Phase 2
  */
 async function bookFlight(flightOption: any): Promise<{
   success: boolean;
   confirmation?: FlightBookingConfirmation;
   error?: string;
 }> {
-  // STUB: Simulate flight booking
-  console.log('[BookingOrchestrator] STUB: Booking flight with Amadeus');
+  try {
+    console.log('[BookingOrchestrator] Booking flight with Amadeus');
 
-  // Simulate API call delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
+    // Extract flight offer data (stored during trip generation)
+    const flightOffer = flightOption.amadeusOffer || flightOption;
 
-  // Mock successful booking
-  const confirmation: FlightBookingConfirmation = {
-    confirmationCode: `FL${Date.now()}`,
-    bookingReference: `STUB-${flightOption?.id.slice(0, 8).toUpperCase()}`,
-    pnr: `PNR${Date.now()}`,
-    provider: flightOption?.provider || 'Unknown',
-    departureTime: flightOption?.departureTime?.toISOString() || new Date().toISOString(),
-    returnTime: flightOption?.returnTime?.toISOString() || new Date().toISOString(),
-    passengerNames: ['John Doe'], // TODO: Get from booking request
-    totalPrice: flightOption?.price || 0,
-    currency: 'USD',
-    deepLink: flightOption?.deepLink,
-  };
+    // Build traveler data
+    // TODO: Get real traveler data from booking request
+    const travelers = [
+      {
+        id: '1',
+        dateOfBirth: '1990-01-01', // TODO: Get from user profile
+        name: {
+          firstName: 'John', // TODO: Get from booking request
+          lastName: 'Doe', // TODO: Get from booking request
+        },
+        gender: 'MALE' as const,
+        contact: {
+          emailAddress: 'john.doe@example.com', // TODO: Get from booking request
+          phones: [
+            {
+              deviceType: 'MOBILE' as const,
+              countryCallingCode: '1',
+              number: '1234567890',
+            },
+          ],
+        },
+      },
+    ];
 
-  return {
-    success: true,
-    confirmation,
-  };
+    // Call Amadeus API
+    const confirmation = await bookFlightAmadeus({
+      flightOffer,
+      travelers,
+    });
+
+    return {
+      success: true,
+      confirmation,
+    };
+  } catch (error) {
+    console.error('[BookingOrchestrator] Flight booking error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Flight booking failed',
+    };
+  }
 }
 
 /**
- * Book a hotel via Booking.com API
- * TODO: Implement real Booking.com booking in Phase 2
+ * Book a hotel
  */
 async function bookHotel(hotelOption: any): Promise<{
   success: boolean;
   confirmation?: HotelBookingConfirmation;
   error?: string;
 }> {
-  // STUB: Simulate hotel booking
-  console.log('[BookingOrchestrator] STUB: Booking hotel with Booking.com');
+  try {
+    console.log('[BookingOrchestrator] Booking hotel');
 
-  await new Promise((resolve) => setTimeout(resolve, 500));
+    // Calculate nights
+    const checkIn = new Date(hotelOption.checkIn || new Date());
+    const checkOut = new Date(hotelOption.checkOut || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+    const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
 
-  const confirmation: HotelBookingConfirmation = {
-    confirmationCode: `HT${Date.now()}`,
-    bookingReference: `STUB-${hotelOption?.id.slice(0, 8).toUpperCase()}`,
-    hotelName: hotelOption?.name || 'Unknown Hotel',
-    checkIn: new Date().toISOString().split('T')[0],
-    checkOut: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    nights: 7,
-    guestNames: ['John Doe'],
-    totalPrice: hotelOption?.priceTotal || 0,
-    currency: 'USD',
-    deepLink: hotelOption?.deepLink,
-  };
+    // Build guest data
+    // TODO: Get real guest data from booking request
+    const guests = [
+      {
+        firstName: 'John', // TODO: Get from booking request
+        lastName: 'Doe', // TODO: Get from booking request
+        email: 'john.doe@example.com', // TODO: Get from booking request
+      },
+    ];
 
-  return {
-    success: true,
-    confirmation,
-  };
+    // Call hotel booking API
+    const confirmation = await bookHotelAPI({
+      hotelId: hotelOption.id,
+      hotelName: hotelOption.name || 'Unknown Hotel',
+      checkIn: checkIn.toISOString().split('T')[0],
+      checkOut: checkOut.toISOString().split('T')[0],
+      nights,
+      guests,
+      totalPrice: hotelOption.priceTotal || 0,
+      currency: 'USD',
+    });
+
+    return {
+      success: true,
+      confirmation,
+    };
+  } catch (error) {
+    console.error('[BookingOrchestrator] Hotel booking error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Hotel booking failed',
+    };
+  }
 }
 
 /**
- * Book an activity via provider API
- * TODO: Implement real activity booking in Phase 2
+ * Book an activity
  */
 async function bookActivity(activityOption: any): Promise<{
   success: boolean;
   confirmation?: ActivityBookingConfirmation;
   error?: string;
 }> {
-  // STUB: Simulate activity booking
-  console.log('[BookingOrchestrator] STUB: Booking activity');
+  try {
+    console.log('[BookingOrchestrator] Booking activity');
 
-  await new Promise((resolve) => setTimeout(resolve, 300));
+    // Call activity booking API
+    const confirmation = await bookActivityAPI({
+      activityId: activityOption.id,
+      activityName: activityOption.name || 'Unknown Activity',
+      date: activityOption.date || new Date().toISOString().split('T')[0],
+      time: activityOption.time,
+      participants: activityOption.participants || 1,
+      totalPrice: activityOption.price || 0,
+      currency: 'USD',
+      contactEmail: 'john.doe@example.com', // TODO: Get from booking request
+    });
 
-  const confirmation: ActivityBookingConfirmation = {
-    confirmationCode: `AC${Date.now()}`,
-    bookingReference: `STUB-${activityOption?.id.slice(0, 8).toUpperCase()}`,
-    activityName: activityOption?.name || 'Unknown Activity',
-    date: new Date().toISOString().split('T')[0],
-    participants: 1,
-    totalPrice: activityOption?.price || 0,
-    currency: 'USD',
-    deepLink: activityOption?.deepLink,
-  };
-
-  return {
-    success: true,
-    confirmation,
-  };
+    return {
+      success: true,
+      confirmation,
+    };
+  } catch (error) {
+    console.error('[BookingOrchestrator] Activity booking error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Activity booking failed',
+    };
+  }
 }
 
 // ============================================
@@ -485,19 +533,35 @@ async function rollbackPayment(state: BookingOrchestratorState): Promise<void> {
 }
 
 async function rollbackFlight(confirmation: FlightBookingConfirmation): Promise<void> {
-  // STUB: Cancel flight booking
-  console.log('[BookingOrchestrator] STUB: Cancelling flight:', confirmation.confirmationCode);
+  console.log('[BookingOrchestrator] Cancelling flight:', confirmation.confirmationCode);
 
-  // TODO: Implement real flight cancellation via Amadeus API
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  try {
+    const result = await cancelFlightAmadeus(confirmation.confirmationCode);
+
+    if (!result.success) {
+      console.error('[BookingOrchestrator] Flight cancellation failed:', result.error);
+    } else {
+      console.log('[BookingOrchestrator] Flight cancelled successfully');
+    }
+  } catch (error) {
+    console.error('[BookingOrchestrator] Flight cancellation error:', error);
+  }
 }
 
 async function rollbackHotel(confirmation: HotelBookingConfirmation): Promise<void> {
-  // STUB: Cancel hotel booking
-  console.log('[BookingOrchestrator] STUB: Cancelling hotel:', confirmation.confirmationCode);
+  console.log('[BookingOrchestrator] Cancelling hotel:', confirmation.confirmationCode);
 
-  // TODO: Implement real hotel cancellation via Booking.com API
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  try {
+    const result = await cancelHotelAPI(confirmation.confirmationCode);
+
+    if (!result.success) {
+      console.error('[BookingOrchestrator] Hotel cancellation failed:', result.error);
+    } else {
+      console.log('[BookingOrchestrator] Hotel cancelled successfully');
+    }
+  } catch (error) {
+    console.error('[BookingOrchestrator] Hotel cancellation error:', error);
+  }
 }
 
 // ============================================

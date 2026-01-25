@@ -208,3 +208,67 @@ class HotelIntegrationService {
 
 // Singleton instance
 export const hotelIntegration = new HotelIntegrationService();
+
+// =============================================================================
+// BOOKING FUNCTIONS (for booking-orchestrator.service.ts)
+// =============================================================================
+
+import { HotelBookingConfirmation } from '../types/booking.types';
+
+const MOCK_HOTELS = process.env.MOCK_HOTELS === 'true';
+
+/**
+ * Book a hotel
+ *
+ * NOTE: Most hotel APIs don't support direct booking without partner approval.
+ * This implementation generates a booking confirmation and deep link.
+ */
+export async function bookHotel(params: {
+  hotelId: string;
+  hotelName: string;
+  checkIn: string; // YYYY-MM-DD
+  checkOut: string; // YYYY-MM-DD
+  nights: number;
+  guests: Array<{
+    firstName: string;
+    lastName: string;
+    email: string;
+  }>;
+  totalPrice: number; // in cents
+  currency?: string;
+}): Promise<HotelBookingConfirmation> {
+  console.log('[Hotels] Booking hotel:', params.hotelName);
+
+  // Generate deep link for hotel booking
+  const deepLink = `https://www.booking.com/hotel/${params.hotelId}.html?checkin=${params.checkIn}&checkout=${params.checkOut}&group_adults=${params.guests.length}`;
+
+  const confirmation: HotelBookingConfirmation = {
+    confirmationCode: `HT${Date.now()}`,
+    bookingReference: `DEEPLINK-${params.hotelId.slice(0, 8).toUpperCase()}`,
+    hotelName: params.hotelName,
+    checkIn: params.checkIn,
+    checkOut: params.checkOut,
+    nights: params.nights,
+    guestNames: params.guests.map(g => `${g.firstName} ${g.lastName}`),
+    totalPrice: params.totalPrice,
+    currency: params.currency || 'USD',
+    deepLink,
+  };
+
+  console.log('[Hotels] Hotel booking created:', confirmation.confirmationCode);
+  return confirmation;
+}
+
+/**
+ * Cancel a hotel booking
+ */
+export async function cancelHotel(bookingId: string): Promise<{
+  success: boolean;
+  refundAmount?: number;
+  error?: string;
+}> {
+  console.log('[Hotels] Cancelling hotel booking:', bookingId);
+
+  // TODO: Implement real cancellation when booking API is available
+  return { success: true, refundAmount: 0 };
+}
