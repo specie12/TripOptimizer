@@ -15,6 +15,96 @@ import {
 } from '../types/integration.types';
 import { getDestination, MockFlight } from '../config/destinations';
 import { cacheService } from '../services/cache.service';
+import { searchFlights as amadeusSearchFlights } from './amadeus.integration';
+
+// =============================================================================
+// AMADEUS FLIGHT PROVIDER (Real API)
+// =============================================================================
+
+/**
+ * Amadeus flight provider using real Amadeus API
+ */
+class AmadeusFlightProvider implements FlightIntegrationProvider {
+  name = 'AmadeusFlightProvider';
+
+  async isAvailable(): Promise<boolean> {
+    // Check if Amadeus is configured (not in mock mode)
+    return process.env.MOCK_AMADEUS !== 'true' &&
+           !!process.env.AMADEUS_API_KEY &&
+           !!process.env.AMADEUS_API_SECRET;
+  }
+
+  async search(criteria: FlightSearchCriteria): Promise<IntegrationResponse<FlightResult[]>> {
+    console.log('[AmadeusProvider] Searching flights via Amadeus API');
+
+    try {
+      // Convert our criteria to Amadeus format
+      const amadeusResults = await amadeusSearchFlights({
+        originLocationCode: this.getAirportCode(criteria.origin),
+        destinationLocationCode: this.getAirportCode(criteria.destination),
+        departureDate: criteria.departureDate.split('T')[0], // YYYY-MM-DD
+        returnDate: criteria.returnDate ? criteria.returnDate.split('T')[0] : undefined,
+        adults: 1, // TODO: Get from criteria
+        maxPrice: criteria.maxPrice,
+        currencyCode: 'USD',
+      });
+
+      // Transform Amadeus results to our FlightResult format
+      const flights: FlightResult[] = amadeusResults.map((flight: any) => {
+        const outboundSegments = flight.itineraries?.[0]?.segments || [];
+        const inboundSegments = flight.itineraries?.[1]?.segments || [];
+        const lastOutboundSegment = outboundSegments[outboundSegments.length - 1];
+
+        return {
+          id: flight.id || uuidv4(),
+          provider: flight.validatingAirlineCodes?.[0] || 'Unknown',
+          price: parseFloat(flight.price?.grandTotal || '0') * 100, // Convert to cents
+          departureTime: outboundSegments[0]?.departure?.at || new Date().toISOString(),
+          arrivalTime: lastOutboundSegment?.arrival?.at || new Date().toISOString(),
+          returnDepartureTime: inboundSegments[0]?.departure?.at || undefined,
+          returnTime: inboundSegments.length > 0 && inboundSegments[inboundSegments.length - 1]?.arrival?.at
+            ? inboundSegments[inboundSegments.length - 1].arrival.at
+            : undefined,
+          stops: outboundSegments.length - 1,
+          deepLink: `https://www.amadeus.com/booking/${flight.id}`,
+        };
+      });
+
+      console.log(`[AmadeusProvider] Found ${flights.length} real flights`);
+
+      return {
+        data: flights,
+        provider: this.name,
+        status: IntegrationStatus.AVAILABLE,
+        cached: false,
+        timestamp: new Date(),
+      };
+    } catch (error) {
+      console.error('[AmadeusProvider] Search failed:', error);
+      throw error; // Let the service try fallback providers
+    }
+  }
+
+  /**
+   * Convert city name to airport code (simplified mapping)
+   */
+  private getAirportCode(city: string): string {
+    const cityToAirport: Record<string, string> = {
+      'Toronto': 'YYZ',
+      'New York': 'JFK',
+      'Barcelona': 'BCN',
+      'London': 'LHR',
+      'Paris': 'CDG',
+      'Tokyo': 'NRT',
+      'Los Angeles': 'LAX',
+      'San Francisco': 'SFO',
+      'Miami': 'MIA',
+      'Chicago': 'ORD',
+    };
+
+    return cityToAirport[city] || city.substring(0, 3).toUpperCase();
+  }
+}
 
 // =============================================================================
 // MOCK FLIGHT PROVIDER
@@ -148,9 +238,11 @@ class FlightIntegrationService {
   private currentProvider: FlightIntegrationProvider;
 
   constructor() {
-    // Initialize with mock provider
-    // In production, add real providers here
-    this.providers = [new MockFlightProvider()];
+    // Initialize with Amadeus provider first, then mock as fallback
+    this.providers = [
+      new AmadeusFlightProvider(),  // Try real API first
+      new MockFlightProvider(),      // Fallback to mock
+    ];
     this.currentProvider = this.providers[0];
   }
 

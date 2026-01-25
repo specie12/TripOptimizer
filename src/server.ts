@@ -4,6 +4,10 @@
  * Main entry point for the API server.
  */
 
+// Load environment variables from .env file
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express, { Application } from 'express';
 import tripRoutes from './routes/trip.routes';
 import interactionRoutes from './routes/interaction.routes';
