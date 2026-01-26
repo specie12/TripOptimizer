@@ -21,6 +21,7 @@ import {
   VerificationResult,
   logAIAgentCall,
 } from '../agents/ai-agents';
+import { getActivitiesForDestination, filterActivities } from '../config/activities.seed';
 
 // Initialize Anthropic client (will be null in mock mode)
 let anthropic: Anthropic | null = null;
@@ -42,16 +43,21 @@ class ActivityDiscoveryAgentImpl implements ActivityDiscoveryAgent {
   async discoverActivities(params: ActivityDiscoveryParams): Promise<DiscoveredActivity[]> {
     const startTime = Date.now();
 
+    // FALLBACK STRATEGY: AI → Static Database
+    // Try AI first, fall back to database if AI fails
+
     if (MOCK_MODE || !anthropic) {
-      return this.generateMockActivities(params);
+      console.log('[ActivityDiscovery] MOCK_MODE - using static database');
+      return this.getStaticActivities(params);
     }
 
     try {
+      console.log(`[ActivityDiscovery] Attempting AI discovery for ${params.destination}`);
       const prompt = this.buildActivityDiscoveryPrompt(params);
 
       const response = await anthropic.messages.create({
         model: MODEL,
-        max_tokens: 2000,
+        max_tokens: 3000,
         messages: [{ role: 'user', content: prompt }],
       });
 
@@ -62,19 +68,29 @@ class ActivityDiscoveryAgentImpl implements ActivityDiscoveryAgent {
 
       const activities = this.parseActivityDiscoveryResponse(textBlock.text);
 
+      // Validate AI output quality
+      const validActivities = this.validateAndScoreActivities(activities, params);
+
+      if (validActivities.length === 0) {
+        console.warn('[ActivityDiscovery] AI returned no valid activities - using static database');
+        return this.getStaticActivities(params);
+      }
+
+      console.log(`[ActivityDiscovery] AI discovered ${validActivities.length} activities`);
+
       logAIAgentCall({
         timestamp: new Date().toISOString(),
         agentType: 'ACTIVITY_DISCOVERY',
         input: params,
-        output: activities,
+        output: validActivities,
         modelUsed: MODEL,
         processingTimeMs: Date.now() - startTime,
         success: true,
       });
 
-      return activities;
+      return validActivities;
     } catch (error) {
-      console.error('Activity discovery error:', error);
+      console.error('[ActivityDiscovery] AI discovery failed:', error);
 
       logAIAgentCall({
         timestamp: new Date().toISOString(),
@@ -87,12 +103,9 @@ class ActivityDiscoveryAgentImpl implements ActivityDiscoveryAgent {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
 
-      // Fallback to mock in development
-      if (process.env.NODE_ENV === 'development') {
-        return this.generateMockActivities(params);
-      }
-
-      throw error;
+      // Fallback to static database
+      console.log('[ActivityDiscovery] Falling back to static database');
+      return this.getStaticActivities(params);
     }
   }
 
@@ -100,12 +113,90 @@ class ActivityDiscoveryAgentImpl implements ActivityDiscoveryAgent {
     const budgetInDollars = (params.budget / 100).toFixed(2);
     const interestsStr = params.interests?.join(', ') || 'general sightseeing';
 
-    return `You are an activity discovery assistant. Find activities in ${params.destination} for ${params.dates.start} to ${params.dates.end} matching these interests: ${interestsStr}.
+    return `You are an activity discovery assistant specialized in finding authentic, real activities for travelers.
 
-Total activity budget: $${budgetInDollars}
-Number of days: ${params.numberOfDays}
+TASK: Find activities in ${params.destination} for ${params.dates.start} to ${params.dates.end}
 
-Return ONLY a JSON array with this exact structure:
+USER INTERESTS: ${interestsStr}
+ACTIVITY BUDGET: $${budgetInDollars}
+NUMBER OF DAYS: ${params.numberOfDays}
+TARGET: ${Math.min(30, params.numberOfDays * 3)} activities
+
+CRITICAL RULES:
+1. ✅ ONLY suggest activities that actually exist
+2. ✅ Include popular landmarks, museums, tours, and experiences
+3. ✅ Mix FREE and paid activities
+4. ✅ Prices in CENTS (e.g., 2500 = $25.00)
+5. ✅ Durations in MINUTES
+6. ✅ Match user interests: ${interestsStr}
+7. ❌ NO fictional or made-up activities
+8. ❌ NO vague descriptions
+9. ❌ NO rankings or scores
+
+CATEGORIES:
+- cultural: museums, landmarks, historic sites, tours
+- food: cooking classes, food tours, tastings, markets
+- adventure: outdoor activities, sports, excursions
+- relaxation: spas, parks, beaches, scenic spots
+- shopping: markets, boutiques, shopping districts
+- nightlife: shows, concerts, bars, clubs
+- other: unique experiences that don't fit above
+
+FEW-SHOT EXAMPLES:
+
+Example 1 - Barcelona:
+[
+  {
+    "name": "Sagrada Familia Tour",
+    "category": "cultural",
+    "typicalPriceRange": { "min": 2600, "max": 3400 },
+    "duration": 120,
+    "description": "Explore Gaudí's unfinished masterpiece with skip-the-line access"
+  },
+  {
+    "name": "Tapas Walking Tour",
+    "category": "food",
+    "typicalPriceRange": { "min": 6000, "max": 9000 },
+    "duration": 180,
+    "description": "Sample authentic tapas at local bars in Gothic Quarter"
+  },
+  {
+    "name": "Beach Day at Barceloneta",
+    "category": "relaxation",
+    "typicalPriceRange": { "min": 0, "max": 0 },
+    "duration": 240,
+    "description": "Relax on Barcelona's most popular beach"
+  }
+]
+
+Example 2 - Paris:
+[
+  {
+    "name": "Eiffel Tower Summit",
+    "category": "cultural",
+    "typicalPriceRange": { "min": 2800, "max": 3500 },
+    "duration": 120,
+    "description": "Ascend to the top of Paris's iconic landmark"
+  },
+  {
+    "name": "French Cooking Class",
+    "category": "food",
+    "typicalPriceRange": { "min": 8000, "max": 15000 },
+    "duration": 180,
+    "description": "Learn to make classic French dishes"
+  },
+  {
+    "name": "Luxembourg Gardens Stroll",
+    "category": "relaxation",
+    "typicalPriceRange": { "min": 0, "max": 0 },
+    "duration": 90,
+    "description": "Peaceful walk through beautiful gardens"
+  }
+]
+
+NOW, find activities for ${params.destination}:
+
+Return ONLY a JSON array with this exact structure. No additional text:
 [
   {
     "name": "Activity Name",
@@ -114,19 +205,7 @@ Return ONLY a JSON array with this exact structure:
     "duration": <minutes>,
     "description": "Brief description"
   }
-]
-
-CRITICAL RULES:
-1. Do NOT make up activities that don't exist
-2. Do NOT set final prices (only typical price RANGE)
-3. Do NOT rank or score activities
-4. Return NULL if you don't have information
-5. Maximum 30 activities
-6. typicalPriceRange should be in cents (e.g., 2500 = $25.00)
-7. Include mix of free and paid activities
-8. Focus on activities that match the interests: ${interestsStr}
-
-Return ONLY the JSON array, nothing else:`;
+]`;
   }
 
   private parseActivityDiscoveryResponse(rawJson: string): DiscoveredActivity[] {
@@ -167,6 +246,111 @@ Return ONLY the JSON array, nothing else:`;
     return validCategories.includes(lower)
       ? (lower as 'cultural' | 'food' | 'adventure' | 'relaxation' | 'shopping' | 'nightlife')
       : 'other';
+  }
+
+  /**
+   * Validate AI-discovered activities and filter out poor quality results
+   */
+  private validateAndScoreActivities(
+    activities: DiscoveredActivity[],
+    params: ActivityDiscoveryParams
+  ): DiscoveredActivity[] {
+    return activities.filter((activity) => {
+      // Must have name
+      if (!activity.name || activity.name.length < 3) {
+        console.warn('[ActivityDiscovery] Rejected: No name');
+        return false;
+      }
+
+      // Must have valid description
+      if (!activity.description || activity.description.length < 10) {
+        console.warn(`[ActivityDiscovery] Rejected ${activity.name}: Poor description`);
+        return false;
+      }
+
+      // Must have valid price range
+      if (
+        !activity.typicalPriceRange ||
+        activity.typicalPriceRange.min < 0 ||
+        activity.typicalPriceRange.max < activity.typicalPriceRange.min
+      ) {
+        console.warn(`[ActivityDiscovery] Rejected ${activity.name}: Invalid price range`);
+        return false;
+      }
+
+      // Price should be within reasonable bounds
+      if (activity.typicalPriceRange.max > params.budget * 2) {
+        console.warn(`[ActivityDiscovery] Rejected ${activity.name}: Price too high`);
+        return false;
+      }
+
+      return true;
+    });
+  }
+
+  /**
+   * Get activities from static database with filtering
+   */
+  private getStaticActivities(params: ActivityDiscoveryParams): DiscoveredActivity[] {
+    console.log(`[ActivityDiscovery] Using static database for ${params.destination}`);
+
+    // Get activities from seed database
+    let activities = getActivitiesForDestination(params.destination);
+
+    if (activities.length === 0) {
+      console.warn(`[ActivityDiscovery] No static activities found for ${params.destination}`);
+      return this.generateMockActivities(params);
+    }
+
+    // Filter by user interests if provided
+    if (params.interests && params.interests.length > 0) {
+      const interestCategories = this.mapInterestsToCategories(params.interests);
+      activities = filterActivities(activities, {
+        categories: interestCategories,
+        maxBudget: params.budget,
+      });
+    }
+
+    // Ensure mix of free and paid activities
+    const freeActivities = activities.filter((a) => a.typicalPriceRange.min === 0);
+    const paidActivities = activities.filter((a) => a.typicalPriceRange.min > 0);
+
+    // Return mix: 30% free, 70% paid (or all available)
+    const targetFree = Math.min(freeActivities.length, Math.ceil(params.numberOfDays * 0.9));
+    const targetPaid = Math.min(paidActivities.length, Math.ceil(params.numberOfDays * 2.1));
+
+    const selected = [
+      ...freeActivities.slice(0, targetFree),
+      ...paidActivities.slice(0, targetPaid),
+    ];
+
+    console.log(`[ActivityDiscovery] Selected ${selected.length} activities from static database`);
+    return selected;
+  }
+
+  /**
+   * Map user interests to activity categories
+   */
+  private mapInterestsToCategories(interests: string[]): string[] {
+    const categoryMap: Record<string, string[]> = {
+      CULTURE_HISTORY: ['cultural'],
+      ART_MUSEUMS: ['cultural'],
+      FOOD_DINING: ['food'],
+      ADVENTURE: ['adventure'],
+      RELAXATION: ['relaxation'],
+      SHOPPING: ['shopping'],
+      NIGHTLIFE: ['nightlife'],
+    };
+
+    const categories = new Set<string>();
+    interests.forEach((interest) => {
+      const mapped = categoryMap[interest];
+      if (mapped) {
+        mapped.forEach((cat) => categories.add(cat));
+      }
+    });
+
+    return Array.from(categories);
   }
 
   private generateMockActivities(params: ActivityDiscoveryParams): DiscoveredActivity[] {
