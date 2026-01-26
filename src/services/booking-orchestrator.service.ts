@@ -39,6 +39,7 @@ import { bookFlight as bookFlightAmadeus, cancelFlight as cancelFlightAmadeus } 
 import { bookHotel as bookHotelAPI, cancelHotel as cancelHotelAPI } from '../integrations/hotel.integration';
 import { bookActivity as bookActivityAPI, cancelActivity as cancelActivityAPI } from '../integrations/activity.integration';
 import { verifyEntity } from './verification.service';
+import { sendBookingConfirmation } from './email.service';
 
 const prisma = new PrismaClient();
 
@@ -226,6 +227,59 @@ export async function bookTrip(request: BookTripRequest): Promise<BookTripRespon
       },
     });
 
+    // ==================== STEP 5: SEND CONFIRMATION EMAIL ====================
+    // Send confirmation email with PDF attachment
+    try {
+      console.log('[BookingOrchestrator] Sending confirmation email...');
+
+      // Get trip request for dates and destination
+      const tripRequest = await prisma.tripRequest.findFirst({
+        where: {
+          tripOptions: {
+            some: { id: tripOption.id },
+          },
+        },
+      });
+
+      if (tripRequest && request.paymentInfo.billingDetails?.email) {
+        const travelerName =
+          `${request.paymentInfo.billingDetails.name || 'Valued Customer'}`;
+
+        const emailResult = await sendBookingConfirmation({
+          to: request.paymentInfo.billingDetails.email,
+          travelerName,
+          tripId: tripOption.id,
+          destination: tripOption.destination,
+          startDate: tripRequest.startDate?.toISOString() || new Date().toISOString(),
+          endDate: tripRequest.endDate?.toISOString() ||
+            new Date(Date.now() + tripRequest.numberOfDays * 24 * 60 * 60 * 1000).toISOString(),
+          bookingResponse: {
+            success: true,
+            state: BookingState.CONFIRMED,
+            confirmations: orchestratorState.confirmations,
+            payment: {
+              paymentIntentId: orchestratorState.paymentIntentId!,
+              amount: request.paymentInfo.amount,
+              currency: request.paymentInfo.currency,
+            },
+          },
+        });
+
+        if (emailResult.success) {
+          console.log('[BookingOrchestrator] Confirmation email sent successfully');
+        } else {
+          console.warn('[BookingOrchestrator] Email sending failed (non-critical):', emailResult.error);
+          orchestratorState.warnings.push(`Email not sent: ${emailResult.error}`);
+        }
+      } else {
+        console.warn('[BookingOrchestrator] No email address provided - skipping email');
+      }
+    } catch (emailError) {
+      // Email is non-critical - log warning but don't fail booking
+      console.warn('[BookingOrchestrator] Email error (non-critical):', emailError);
+      orchestratorState.warnings.push('Confirmation email could not be sent');
+    }
+
     const duration = Date.now() - startTime;
     console.log(`[BookingOrchestrator] Booking completed successfully in ${duration}ms`);
 
@@ -238,6 +292,7 @@ export async function bookTrip(request: BookTripRequest): Promise<BookTripRespon
         amount: request.paymentInfo.amount,
         currency: request.paymentInfo.currency,
       },
+      warnings: orchestratorState.warnings.length > 0 ? orchestratorState.warnings : undefined,
     };
   } catch (error) {
     console.error('[BookingOrchestrator] Unexpected error:', error);

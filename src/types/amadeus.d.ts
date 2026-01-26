@@ -1,36 +1,20 @@
 /**
- * TypeScript declarations for Amadeus SDK
- * Official package does not include TypeScript definitions
+ * Type declarations for amadeus package
  */
 
 declare module 'amadeus' {
-  export interface AmadeusConfig {
-    clientId: string;
-    clientSecret: string;
-    hostname?: 'production' | 'test';
-  }
-
   export default class Amadeus {
-    constructor(config: AmadeusConfig);
+    constructor(config: { clientId: string; clientSecret: string; hostname?: string });
 
     shopping: {
       flightOffersSearch: {
-        get(params: any): Promise<{ data: any[] }>;
-      };
-      flightOffers: {
-        pricing: {
-          post(params: any): Promise<{ data: any }>;
-        };
+        get(params: any): Promise<any>;
       };
     };
 
     booking: {
       flightOrders: {
-        post(params: any): Promise<{ data: any }>;
-      };
-      flightOrder(orderId: string): {
-        get(): Promise<{ data: any }>;
-        delete(): Promise<void>;
+        post(body: any): Promise<any>;
       };
     };
   }

@@ -124,6 +124,9 @@ export interface BookTripResponse {
   error?: string;
   failedComponents?: string[]; // Which components failed
 
+  // Warning messages (non-critical issues)
+  warnings?: string[];
+
   // Rollback info (if partial failure)
   rollbackInfo?: {
     refundAmount?: number;

@@ -18,6 +18,7 @@ import { lockdownRouter } from './routes/lockdown.routes';
 import { budgetRouter } from './routes/budget.routes'; // Phase 5: Budget tracking
 import { optimizationRouter } from './routes/optimization.routes'; // Phase 6: Optimization
 import bookingRoutes from './routes/booking.routes'; // Phase 2: Booking orchestration
+import itineraryRoutes from './routes/itinerary.routes'; // Phase 3: Itinerary export
 import { errorHandler } from './middleware/validation';
 
 // Import agent system
@@ -56,6 +57,7 @@ app.use('/lockdown', lockdownRouter); // Phase 2: Lock-down mechanism
 app.use('/budget', budgetRouter); // Phase 5: Budget & spend tracking
 app.use('/optimization', optimizationRouter); // Phase 6: Continuous optimization
 app.use('/booking', bookingRoutes); // Phase 2: Booking orchestration
+app.use('/itinerary', itineraryRoutes); // Phase 3: Itinerary export
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -84,6 +86,8 @@ app.get('/', (req, res) => {
       'POST /booking/book': 'Book a complete trip (Phase 2)',
       'POST /booking/cancel': 'Cancel a booking (Phase 2)',
       'GET /booking/:id': 'Get booking details (Phase 2)',
+      'GET /itinerary/:tripOptionId/download': 'Download PDF itinerary (Phase 3)',
+      'GET /itinerary/:tripOptionId/preview': 'Preview itinerary as JSON (Phase 3)',
     },
   });
 });
