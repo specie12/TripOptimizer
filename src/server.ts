@@ -19,6 +19,7 @@ import { budgetRouter } from './routes/budget.routes'; // Phase 5: Budget tracki
 import { optimizationRouter } from './routes/optimization.routes'; // Phase 6: Optimization
 import bookingRoutes from './routes/booking.routes'; // Phase 2: Booking orchestration
 import itineraryRoutes from './routes/itinerary.routes'; // Phase 3: Itinerary export
+import tripEditRoutes from './routes/trip-edit.routes'; // Phase 5: Component swap & edit
 import { errorHandler } from './middleware/validation';
 
 // Import agent system
@@ -58,6 +59,7 @@ app.use('/budget', budgetRouter); // Phase 5: Budget & spend tracking
 app.use('/optimization', optimizationRouter); // Phase 6: Continuous optimization
 app.use('/booking', bookingRoutes); // Phase 2: Booking orchestration
 app.use('/itinerary', itineraryRoutes); // Phase 3: Itinerary export
+app.use('/trip-edit', tripEditRoutes); // Phase 5: Component swap & edit
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -88,6 +90,11 @@ app.get('/', (req, res) => {
       'GET /booking/:id': 'Get booking details (Phase 2)',
       'GET /itinerary/:tripOptionId/download': 'Download PDF itinerary (Phase 3)',
       'GET /itinerary/:tripOptionId/preview': 'Preview itinerary as JSON (Phase 3)',
+      'POST /trip-edit/:tripOptionId/swap/flight': 'Swap flight component (Phase 5)',
+      'POST /trip-edit/:tripOptionId/swap/hotel': 'Swap hotel component (Phase 5)',
+      'POST /trip-edit/:tripOptionId/swap/activity': 'Swap/add/remove activity (Phase 5)',
+      'POST /trip-edit/:tripRequestId/edit': 'Edit trip parameters (Phase 5)',
+      'GET /trip-edit/:tripOptionId/budget': 'Get budget breakdown (Phase 5)',
     },
   });
 });
