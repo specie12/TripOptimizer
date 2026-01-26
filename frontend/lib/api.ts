@@ -140,3 +140,190 @@ export async function bookTrip(
 
   return data;
 }
+
+// =============================================================================
+// PHASE 5: COMPONENT SWAP & EDIT FLOW
+// =============================================================================
+
+/**
+ * Flight Swap Data
+ */
+export interface FlightSwapData {
+  provider: string;
+  price: number;
+  departureTime: string;
+  returnTime: string;
+  deepLink: string;
+}
+
+/**
+ * Hotel Swap Data
+ */
+export interface HotelSwapData {
+  name: string;
+  priceTotal: number;
+  rating?: number | null;
+  deepLink: string;
+}
+
+/**
+ * Budget Impact (returned from swap operations)
+ */
+export interface BudgetImpact {
+  previousCost: number;
+  newCost: number;
+  difference: number;
+  remainingBudget: number;
+}
+
+/**
+ * Swap Result
+ */
+export interface SwapResult {
+  success: boolean;
+  error?: string;
+  updatedTripOption?: any;
+  budgetImpact?: BudgetImpact;
+}
+
+/**
+ * Budget Breakdown Response
+ */
+export interface BudgetBreakdownResponse {
+  success: boolean;
+  budget: {
+    total: number;
+    allocated: Record<string, number>;
+    spent: {
+      flight: number;
+      hotel: number;
+      activities: number;
+      total: number;
+    };
+    remaining: number;
+    percentageUsed: number;
+  };
+}
+
+/**
+ * Swap flight for a trip option
+ */
+export async function swapFlight(
+  tripOptionId: string,
+  flightData: FlightSwapData
+): Promise<SwapResult> {
+  const response = await fetch(`${API_BASE}/trip-edit/${tripOptionId}/swap/flight`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(flightData),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to swap flight');
+  }
+
+  return data;
+}
+
+/**
+ * Swap hotel for a trip option
+ */
+export async function swapHotel(
+  tripOptionId: string,
+  hotelData: HotelSwapData
+): Promise<SwapResult> {
+  const response = await fetch(`${API_BASE}/trip-edit/${tripOptionId}/swap/hotel`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(hotelData),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to swap hotel');
+  }
+
+  return data;
+}
+
+/**
+ * Add, remove, or replace activity
+ */
+export async function swapActivity(
+  tripOptionId: string,
+  activityId: string,
+  action: 'add' | 'remove' | 'replace',
+  replaceWithId?: string
+): Promise<SwapResult> {
+  const response = await fetch(`${API_BASE}/trip-edit/${tripOptionId}/swap/activity`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      activityId,
+      action,
+      replaceWithId,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to swap activity');
+  }
+
+  return data;
+}
+
+/**
+ * Get budget breakdown for a trip option
+ */
+export async function getBudgetBreakdown(
+  tripOptionId: string
+): Promise<BudgetBreakdownResponse> {
+  const response = await fetch(`${API_BASE}/trip-edit/${tripOptionId}/budget`);
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to get budget breakdown');
+  }
+
+  return data;
+}
+
+/**
+ * Edit trip parameters
+ */
+export async function editTrip(
+  tripRequestId: string,
+  changes: any,
+  preserveLocks: boolean = false
+): Promise<{ success: boolean; error?: string }> {
+  const response = await fetch(`${API_BASE}/trip-edit/${tripRequestId}/edit`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      changes,
+      preserveLocks,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to edit trip');
+  }
+
+  return data;
+}

@@ -20,6 +20,9 @@ import TripDetails from './TripDetails';
 import AffiliateDisclosure from './monetization/AffiliateDisclosure';
 import ActivityCard from './ActivityCard';
 import BookingModal from './BookingModal';
+import FlightSwapModal from './FlightSwapModal';
+import HotelSwapModal from './HotelSwapModal';
+import BudgetImpactDisplay from './BudgetImpactDisplay';
 
 interface TripCardProps {
   tripOption: TripOptionResponse;
@@ -30,6 +33,10 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
   const [showDetails, setShowDetails] = useState(false);
   const [explanationExpanded, setExplanationExpanded] = useState(false);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [flightSwapModalOpen, setFlightSwapModalOpen] = useState(false);
+  const [hotelSwapModalOpen, setHotelSwapModalOpen] = useState(false);
+  const [showBudgetBreakdown, setShowBudgetBreakdown] = useState(false);
+  const [currentTripOption, setCurrentTripOption] = useState(tripOption);
 
   const handleExpandExplanation = () => {
     if (!explanationExpanded) {
@@ -45,13 +52,17 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
     setShowDetails(!showDetails);
   };
 
-  // Calculate costs for breakdown
-  const flightCost = tripOption.flight.price;
-  const hotelCost = tripOption.hotel.priceTotal;
-  const activitiesCost = tripOption.activities?.reduce((sum, a) => sum + a.price, 0) || 0;
+  const handleSwapSuccess = (updatedTripOption: any) => {
+    setCurrentTripOption(updatedTripOption);
+  };
+
+  // Calculate costs for breakdown (use currentTripOption for live updates)
+  const flightCost = currentTripOption.flight.price;
+  const hotelCost = currentTripOption.hotel.priceTotal;
+  const activitiesCost = currentTripOption.activities?.reduce((sum, a) => sum + a.price, 0) || 0;
 
   // Estimate food and transport from remaining budget
-  const remainingAfterActivities = tripOption.remainingBudget - activitiesCost;
+  const remainingAfterActivities = currentTripOption.remainingBudget - activitiesCost;
   const estimatedFood = Math.floor(remainingAfterActivities * 0.6);
   const estimatedTransport = Math.floor(remainingAfterActivities * 0.4);
 
@@ -69,24 +80,24 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
       <div className="p-6 pb-4 bg-gradient-to-r from-purple-50 to-pink-50">
         <div className="flex justify-between items-start mb-3">
           <h3 className="text-3xl font-bold text-gray-900">
-            {tripOption.destination}
+            {currentTripOption.destination}
           </h3>
 
           {/* Match Percentage Badge */}
           <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-full font-bold text-sm shadow-lg">
-            {tripOption.matchPercentage}% Match
+            {currentTripOption.matchPercentage}% Match
           </div>
         </div>
 
         {/* Trip Type Description */}
         <p className="text-gray-700 font-medium mb-4">
-          {tripOption.tripTypeDescription}
+          {currentTripOption.tripTypeDescription}
         </p>
 
         {/* Total Cost Display */}
         <div className="flex items-baseline gap-2">
           <span className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            {formatCurrency(tripOption.totalCost)}
+            {formatCurrency(currentTripOption.totalCost)}
           </span>
           <span className="text-gray-600 text-lg">total</span>
         </div>
@@ -116,7 +127,7 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
       </div>
 
       {/* Trip Highlights Section */}
-      {tripOption.highlights && tripOption.highlights.length > 0 && (
+      {currentTripOption.highlights && currentTripOption.highlights.length > 0 && (
         <div className="p-6 border-t border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <h4 className="font-semibold text-gray-900 flex items-center gap-2">
@@ -128,7 +139,7 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {tripOption.highlights.map((highlight, index) => (
+            {currentTripOption.highlights.map((highlight, index) => (
               <span
                 key={index}
                 className="px-4 py-2 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 rounded-full text-sm font-medium"
@@ -147,7 +158,7 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
           <div>
             <div className="font-semibold text-gray-900 text-sm mb-1">Trip Type</div>
             <div className="text-gray-700 text-sm">
-              {tripOption.tripTypeDescription}
+              {currentTripOption.tripTypeDescription}
             </div>
           </div>
         </div>
@@ -180,25 +191,25 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
         </button>
 
         {explanationExpanded && (
-          <WhyThisWorks explanation={tripOption.explanation} />
+          <WhyThisWorks explanation={currentTripOption.explanation} />
         )}
       </div>
 
       {/* Activities Section (Phase 3) */}
-      {tripOption.activities && tripOption.activities.length > 0 && (
+      {currentTripOption.activities && currentTripOption.activities.length > 0 && (
         <div className="px-6 pb-4 border-t border-gray-100">
           <div className="pt-4">
             <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
               <span>🎯</span>
-              <span>Recommended Activities ({tripOption.activities.length})</span>
+              <span>Recommended Activities ({currentTripOption.activities.length})</span>
             </h4>
             <div className="space-y-2">
-              {tripOption.activities.slice(0, 3).map((activity) => (
+              {currentTripOption.activities.slice(0, 3).map((activity) => (
                 <ActivityCard key={activity.id} activity={activity} compact={true} />
               ))}
-              {tripOption.activities.length > 3 && (
+              {currentTripOption.activities.length > 3 && (
                 <p className="text-sm text-gray-500 text-center pt-2">
-                  + {tripOption.activities.length - 3} more activities
+                  + {currentTripOption.activities.length - 3} more activities
                 </p>
               )}
             </div>
@@ -224,7 +235,7 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
           className="w-full py-4 px-6 bg-gradient-to-r from-green-600 to-green-700 text-white font-bold rounded-xl hover:from-green-700 hover:to-green-800 transition-all shadow-lg mb-4 flex items-center justify-center gap-2"
         >
           <span className="text-lg">🎉</span>
-          <span>Book Complete Trip - {formatCurrency(tripOption.totalCost)}</span>
+          <span>Book Complete Trip - {formatCurrency(currentTripOption.totalCost)}</span>
         </button>
 
         {/* Secondary Options: Individual Booking */}
@@ -234,16 +245,16 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
           </p>
           <div className="flex flex-wrap gap-3">
             <a
-              href={tripOption.flight.deepLink}
+              href={currentTripOption.flight.deepLink}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 min-w-[140px] py-2 px-4 bg-blue-100 text-blue-700 font-semibold rounded-lg hover:bg-blue-200 transition-colors text-center text-sm"
               onClick={() =>
                 import('@/lib/tracking').then(({ trackBookFlightClick }) =>
                   trackBookFlightClick(
-                    tripOption.id,
-                    tripOption.destination,
-                    tripOption.flight.provider
+                    currentTripOption.id,
+                    currentTripOption.destination,
+                    currentTripOption.flight.provider
                   )
                 )
               }
@@ -252,16 +263,16 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
             </a>
 
             <a
-              href={tripOption.hotel.deepLink}
+              href={currentTripOption.hotel.deepLink}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 min-w-[140px] py-2 px-4 bg-purple-100 text-purple-700 font-semibold rounded-lg hover:bg-purple-200 transition-colors text-center text-sm"
               onClick={() =>
                 import('@/lib/tracking').then(({ trackBookHotelClick }) =>
                   trackBookHotelClick(
-                    tripOption.id,
-                    tripOption.destination,
-                    tripOption.hotel.name
+                    currentTripOption.id,
+                    currentTripOption.destination,
+                    currentTripOption.hotel.name
                   )
                 )
               }
@@ -270,6 +281,41 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
             </a>
           </div>
         </div>
+
+        {/* Phase 5: Component Swap Options */}
+        <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <p className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <span>🔄</span>
+            <span>Customize Your Trip</span>
+          </p>
+          <div className="flex flex-wrap gap-2 mb-3">
+            <button
+              onClick={() => setFlightSwapModalOpen(true)}
+              className="flex-1 min-w-[140px] py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors text-sm"
+            >
+              ✈️ Swap Flight
+            </button>
+            <button
+              onClick={() => setHotelSwapModalOpen(true)}
+              className="flex-1 min-w-[140px] py-2 px-4 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors text-sm"
+            >
+              🏨 Swap Hotel
+            </button>
+          </div>
+          <button
+            onClick={() => setShowBudgetBreakdown(!showBudgetBreakdown)}
+            className="w-full py-2 px-4 bg-white border border-blue-300 text-blue-700 font-medium rounded-lg hover:bg-blue-50 transition-colors text-sm"
+          >
+            {showBudgetBreakdown ? '📊 Hide Budget Details' : '📊 View Budget Breakdown'}
+          </button>
+        </div>
+
+        {/* Budget Breakdown Display */}
+        {showBudgetBreakdown && (
+          <div className="mb-4">
+            <BudgetImpactDisplay tripOptionId={currentTripOption.id} />
+          </div>
+        )}
 
         {/* Affiliate Disclosure */}
         <AffiliateDisclosure className="text-center mb-2" />
@@ -282,15 +328,39 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
 
       {/* Booking Modal */}
       <BookingModal
-        tripOption={tripOption}
+        tripOption={currentTripOption}
         isOpen={bookingModalOpen}
         onClose={() => setBookingModalOpen(false)}
+      />
+
+      {/* Phase 5: Flight Swap Modal */}
+      <FlightSwapModal
+        tripOptionId={currentTripOption.id}
+        currentFlight={currentTripOption.flight}
+        flightBudget={Math.floor(budgetTotal * 0.30)} // Estimate 30% for flights
+        totalBudget={budgetTotal}
+        currentTotalCost={currentTripOption.totalCost}
+        isOpen={flightSwapModalOpen}
+        onClose={() => setFlightSwapModalOpen(false)}
+        onSwapSuccess={handleSwapSuccess}
+      />
+
+      {/* Phase 5: Hotel Swap Modal */}
+      <HotelSwapModal
+        tripOptionId={currentTripOption.id}
+        currentHotel={currentTripOption.hotel}
+        hotelBudget={Math.floor(budgetTotal * 0.25)} // Estimate 25% for hotels
+        totalBudget={budgetTotal}
+        currentTotalCost={currentTripOption.totalCost}
+        isOpen={hotelSwapModalOpen}
+        onClose={() => setHotelSwapModalOpen(false)}
+        onSwapSuccess={handleSwapSuccess}
       />
 
       {/* Expandable Trip Details */}
       {showDetails && (
         <div className="border-t border-gray-100">
-          <TripDetails tripOption={tripOption} budgetTotal={budgetTotal} />
+          <TripDetails tripOption={currentTripOption} budgetTotal={budgetTotal} />
         </div>
       )}
     </div>
