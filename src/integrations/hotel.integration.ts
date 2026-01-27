@@ -6,6 +6,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
+import axios from 'axios';
 import {
   HotelIntegrationProvider,
   HotelSearchCriteria,
@@ -15,6 +16,217 @@ import {
 } from '../types/integration.types';
 import { getDestination, MockHotel } from '../config/destinations';
 import { cacheService } from '../services/cache.service';
+
+// Environment variables
+const MOCK_HOTELS = process.env.MOCK_HOTELS === 'true';
+const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
+const RAPIDAPI_HOST = process.env.RAPIDAPI_HOTELS_HOST || 'booking-com.p.rapidapi.com';
+
+// =============================================================================
+// RAPIDAPI HOTEL PROVIDER (Booking.com)
+// =============================================================================
+
+/**
+ * RapidAPI hotel provider using Booking.com API
+ */
+class RapidAPIHotelProvider implements HotelIntegrationProvider {
+  name = 'RapidAPI-Booking.com';
+  private apiKey: string;
+  private host: string;
+
+  constructor(apiKey: string, host: string) {
+    this.apiKey = apiKey;
+    this.host = host;
+  }
+
+  async isAvailable(): Promise<boolean> {
+    return !!this.apiKey && !!this.host;
+  }
+
+  async search(criteria: HotelSearchCriteria): Promise<IntegrationResponse<HotelResult[]>> {
+    try {
+      console.log(`[${this.name}] Searching hotels for ${criteria.destination}`);
+
+      // Check cache first
+      const cacheKey = {
+        destination: criteria.destination,
+        checkInDate: criteria.checkInDate,
+        checkOutDate: criteria.checkOutDate,
+        numberOfNights: criteria.numberOfNights,
+        maxPrice: criteria.maxPrice,
+      };
+      const cached = cacheService.get<HotelResult[]>('hotels-rapidapi', cacheKey);
+
+      if (cached) {
+        console.log(`[${this.name}] Returning cached results`);
+        return {
+          data: cached,
+          provider: this.name,
+          status: IntegrationStatus.AVAILABLE,
+          cached: true,
+          timestamp: new Date(),
+        };
+      }
+
+      // Step 1: Search for destination to get destination ID
+      const destinationId = await this.getDestinationId(criteria.destination);
+      if (!destinationId) {
+        console.warn(`[${this.name}] Destination not found: ${criteria.destination}`);
+        return {
+          data: [],
+          provider: this.name,
+          status: IntegrationStatus.ERROR,
+          cached: false,
+          timestamp: new Date(),
+          error: `Destination ${criteria.destination} not found`,
+        };
+      }
+
+      // Step 2: Search for hotels
+      const hotels = await this.searchHotels(destinationId, criteria);
+
+      // Step 3: Transform and filter results
+      const results: HotelResult[] = hotels
+        .map((hotel) => this.transformHotel(hotel, criteria))
+        .filter((hotel) => {
+          // Filter by max price if specified
+          if (criteria.maxPrice && hotel.priceTotal > criteria.maxPrice) {
+            return false;
+          }
+          // Filter by min rating if specified
+          if (criteria.minRating && hotel.rating !== null && hotel.rating < criteria.minRating) {
+            return false;
+          }
+          return true;
+        })
+        .slice(0, criteria.maxResults ?? 10);
+
+      console.log(`[${this.name}] Found ${results.length} hotels`);
+
+      // Cache the results
+      cacheService.set('hotels-rapidapi', cacheKey, results);
+
+      return {
+        data: results,
+        provider: this.name,
+        status: IntegrationStatus.AVAILABLE,
+        cached: false,
+        timestamp: new Date(),
+      };
+    } catch (error: any) {
+      console.error(`[${this.name}] Search failed:`, error.message);
+      return {
+        data: [],
+        provider: this.name,
+        status: IntegrationStatus.ERROR,
+        cached: false,
+        timestamp: new Date(),
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * Get destination ID from destination name
+   */
+  private async getDestinationId(destination: string): Promise<string | null> {
+    try {
+      const response = await axios.get('https://booking-com.p.rapidapi.com/v1/hotels/locations', {
+        params: {
+          name: destination,
+          locale: 'en-us',
+        },
+        headers: {
+          'X-RapidAPI-Key': this.apiKey,
+          'X-RapidAPI-Host': this.host,
+        },
+        timeout: 10000,
+      });
+
+      if (response.data && response.data.length > 0) {
+        // Return the first match's dest_id
+        return response.data[0].dest_id || response.data[0].city_id || null;
+      }
+
+      return null;
+    } catch (error: any) {
+      console.error(`[${this.name}] Failed to get destination ID:`, error.message);
+      return null;
+    }
+  }
+
+  /**
+   * Search for hotels by destination ID
+   */
+  private async searchHotels(destinationId: string, criteria: HotelSearchCriteria): Promise<any[]> {
+    try {
+      const response = await axios.get('https://booking-com.p.rapidapi.com/v1/hotels/search', {
+        params: {
+          dest_id: destinationId,
+          dest_type: 'city',
+          checkout_date: criteria.checkOutDate,
+          checkin_date: criteria.checkInDate,
+          adults_number: criteria.guests || 2,
+          room_number: 1,
+          units: 'metric',
+          order_by: 'popularity',
+          locale: 'en-us',
+          currency: 'USD',
+          page_number: 0,
+        },
+        headers: {
+          'X-RapidAPI-Key': this.apiKey,
+          'X-RapidAPI-Host': this.host,
+        },
+        timeout: 15000,
+      });
+
+      return response.data?.result || [];
+    } catch (error: any) {
+      console.error(`[${this.name}] Failed to search hotels:`, error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Transform Booking.com API response to HotelResult format
+   */
+  private transformHotel(hotel: any, criteria: HotelSearchCriteria): HotelResult {
+    // Extract price information
+    const pricePerNight = hotel.price_breakdown?.gross_price
+      ? Math.round(parseFloat(hotel.price_breakdown.gross_price) * 100) // Convert to cents
+      : hotel.min_total_price
+      ? Math.round(parseFloat(hotel.min_total_price) * 100)
+      : 10000; // Fallback to $100/night
+
+    const priceTotal = pricePerNight * criteria.numberOfNights;
+
+    // Extract rating (Booking.com uses 0-10 scale, convert to 0-5)
+    const rating = hotel.review_score
+      ? parseFloat(hotel.review_score) / 2
+      : null;
+
+    // Extract amenities
+    const amenities: string[] = [];
+    if (hotel.hotel_facilities) {
+      amenities.push(...hotel.hotel_facilities.slice(0, 5));
+    }
+
+    // Generate deep link
+    const deepLink = hotel.url || `https://www.booking.com/hotel/${hotel.hotel_id}.html`;
+
+    return {
+      id: hotel.hotel_id?.toString() || uuidv4(),
+      name: hotel.hotel_name || 'Unknown Hotel',
+      priceTotal,
+      pricePerNight,
+      rating,
+      reviewCount: hotel.review_nr ? parseInt(hotel.review_nr) : undefined,
+      amenities,
+      deepLink,
+    };
+  }
+}
 
 // =============================================================================
 // MOCK HOTEL PROVIDER
@@ -145,10 +357,24 @@ class HotelIntegrationService {
   private currentProvider: HotelIntegrationProvider;
 
   constructor() {
-    // Initialize with mock provider
-    // In production, add real providers here
-    this.providers = [new MockHotelProvider()];
+    this.providers = [];
+
+    // Add RapidAPI provider if credentials are available and not in mock mode
+    if (!MOCK_HOTELS && RAPIDAPI_KEY && RAPIDAPI_HOST) {
+      const rapidApiProvider = new RapidAPIHotelProvider(RAPIDAPI_KEY, RAPIDAPI_HOST);
+      this.providers.push(rapidApiProvider);
+      console.log('[Hotels] Using RapidAPI (Booking.com) provider');
+    }
+
+    // Always add mock provider as fallback
+    this.providers.push(new MockHotelProvider());
+
+    // Set current provider to the first available one
     this.currentProvider = this.providers[0];
+
+    if (MOCK_HOTELS) {
+      console.log('[Hotels] Using Mock provider (MOCK_HOTELS=true)');
+    }
   }
 
   /**
@@ -214,8 +440,6 @@ export const hotelIntegration = new HotelIntegrationService();
 // =============================================================================
 
 import { HotelBookingConfirmation } from '../types/booking.types';
-
-const MOCK_HOTELS = process.env.MOCK_HOTELS === 'true';
 
 /**
  * Book a hotel

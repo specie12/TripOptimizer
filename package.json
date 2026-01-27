@@ -29,6 +29,7 @@
     "@types/pdfkit": "^0.17.4",
     "@types/stripe": "^8.0.416",
     "amadeus": "^11.0.0",
+    "axios": "^1.13.3",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "nodemailer": "^7.0.12",
