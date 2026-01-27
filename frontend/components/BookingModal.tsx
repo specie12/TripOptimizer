@@ -21,11 +21,13 @@ import { bookTrip, BookingRequest, BookingResponse } from '@/lib/api';
 import { formatCurrency } from '@/lib/formatters';
 import { useRouter } from 'next/navigation';
 
-// Initialize Stripe (replace with your publishable key)
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ||
-  'pk_test_51StW4gRpMMA026IXZ4yZz4wCYqwHc5rZ0xC8xr88iQXFDpX1qFYHXKDgr7HZYVvVQgxeGCf8wfjfkXJ1YTXXqW7w00zcXqy2dg'
-);
+// Initialize Stripe (will be null in mock mode)
+const MOCK_MODE = !process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ||
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY === 'pk_test_mock';
+
+const stripePromise = MOCK_MODE
+  ? Promise.resolve(null)
+  : loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 interface BookingModalProps {
   tripOption: TripOptionResponse;
@@ -91,44 +93,52 @@ function BookingForm({ tripOption, onSuccess, onError }: {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!stripe || !elements) {
-      onError('Stripe has not loaded yet. Please try again.');
-      return;
-    }
-
-    const cardElement = elements.getElement(CardElement);
-    if (!cardElement) {
-      onError('Card element not found. Please refresh the page.');
-      return;
-    }
-
     setIsProcessing(true);
-    setProcessingStep('Creating payment method...');
 
     try {
-      // Step 1: Create payment method
-      const { error: paymentMethodError, paymentMethod } = await stripe.createPaymentMethod({
-        type: 'card',
-        card: cardElement,
-        billing_details: {
-          name: `${formData.firstName} ${formData.lastName}`,
-          email: formData.email,
-          address: {
-            line1: formData.address.line1,
-            city: formData.address.city,
-            state: formData.address.state,
-            postal_code: formData.address.postal_code,
-            country: formData.address.country,
+      let paymentMethodId: string;
+
+      // Mock mode: use a fake payment method ID
+      if (MOCK_MODE || !stripe || !elements) {
+        console.log('[BookingModal] Running in MOCK mode - using mock payment method');
+        setProcessingStep('Processing mock payment...');
+        paymentMethodId = 'pm_mock_test_' + Date.now();
+      } else {
+        // Real Stripe mode
+        const cardElement = elements.getElement(CardElement);
+        if (!cardElement) {
+          onError('Card element not found. Please refresh the page.');
+          return;
+        }
+
+        setProcessingStep('Creating payment method...');
+
+        // Step 1: Create payment method
+        const { error: paymentMethodError, paymentMethod } = await stripe.createPaymentMethod({
+          type: 'card',
+          card: cardElement,
+          billing_details: {
+            name: `${formData.firstName} ${formData.lastName}`,
+            email: formData.email,
+            address: {
+              line1: formData.address.line1,
+              city: formData.address.city,
+              state: formData.address.state,
+              postal_code: formData.address.postal_code,
+              country: formData.address.country,
+            },
           },
-        },
-      });
+        });
 
-      if (paymentMethodError) {
-        throw new Error(paymentMethodError.message);
-      }
+        if (paymentMethodError) {
+          throw new Error(paymentMethodError.message);
+        }
 
-      if (!paymentMethod) {
-        throw new Error('Failed to create payment method');
+        if (!paymentMethod) {
+          throw new Error('Failed to create payment method');
+        }
+
+        paymentMethodId = paymentMethod.id;
       }
 
       // Step 2: Book trip with payment method
@@ -137,7 +147,7 @@ function BookingForm({ tripOption, onSuccess, onError }: {
       const bookingRequest: BookingRequest = {
         tripOptionId: tripOption.id,
         paymentInfo: {
-          paymentMethodId: paymentMethod.id,
+          paymentMethodId,
           amount: tripOption.totalCost,
           currency: 'USD',
           billingDetails: {
