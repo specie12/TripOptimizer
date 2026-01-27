@@ -109,14 +109,8 @@ class RapidAPIHotelProvider implements HotelIntegrationProvider {
       };
     } catch (error: any) {
       console.error(`[${this.name}] Search failed:`, error.message);
-      return {
-        data: [],
-        provider: this.name,
-        status: IntegrationStatus.ERROR,
-        cached: false,
-        timestamp: new Date(),
-        error: error.message,
-      };
+      // Re-throw error to trigger fallback to next provider
+      throw error;
     }
   }
 
