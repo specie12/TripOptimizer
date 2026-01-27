@@ -108,6 +108,71 @@ export const DESTINATIONS: Record<string, DestinationData> = {
       { name: 'Waldorf Astoria', pricePerNight: 50000, rating: 4.9 },
     ],
   },
+  'Dubai': {
+    name: 'Dubai',
+    flights: [
+      { provider: 'Emirates', basePrice: 95000, flightDuration: 14 },
+      { provider: 'Etihad', basePrice: 88000, flightDuration: 14.5 },
+      { provider: 'Qatar Airways', basePrice: 92000, flightDuration: 15 },
+    ],
+    hotels: [
+      { name: 'Rove Downtown Dubai', pricePerNight: 12000, rating: 4.2 },
+      { name: 'Ibis Al Barsha', pricePerNight: 9000, rating: 3.8 },
+      { name: 'Atlantis The Palm', pricePerNight: 55000, rating: 4.7 },
+    ],
+  },
+  'Singapore': {
+    name: 'Singapore',
+    flights: [
+      { provider: 'Singapore Airlines', basePrice: 92000, flightDuration: 18 },
+      { provider: 'United', basePrice: 98000, flightDuration: 19 },
+      { provider: 'ANA', basePrice: 95000, flightDuration: 18.5 },
+    ],
+    hotels: [
+      { name: 'Hotel 81 Bugis', pricePerNight: 11000, rating: 3.9 },
+      { name: 'Park Royal on Pickering', pricePerNight: 18000, rating: 4.4 },
+      { name: 'Marina Bay Sands', pricePerNight: 60000, rating: 4.8 },
+    ],
+  },
+  'New York': {
+    name: 'New York',
+    flights: [
+      { provider: 'Delta', basePrice: 38000, flightDuration: 6 },
+      { provider: 'American Airlines', basePrice: 42000, flightDuration: 6.5 },
+      { provider: 'United', basePrice: 40000, flightDuration: 6 },
+    ],
+    hotels: [
+      { name: 'Pod 51 Hotel', pricePerNight: 16000, rating: 4.0 },
+      { name: 'YOTEL New York', pricePerNight: 20000, rating: 4.2 },
+      { name: 'The Plaza Hotel', pricePerNight: 75000, rating: 4.6 },
+    ],
+  },
+  'Bangkok': {
+    name: 'Bangkok',
+    flights: [
+      { provider: 'Thai Airways', basePrice: 82000, flightDuration: 17 },
+      { provider: 'ANA', basePrice: 85000, flightDuration: 18 },
+      { provider: 'Qatar Airways', basePrice: 79000, flightDuration: 17.5 },
+    ],
+    hotels: [
+      { name: 'ibis Bangkok Riverside', pricePerNight: 7000, rating: 4.1 },
+      { name: 'Novotel Bangkok', pricePerNight: 11000, rating: 4.3 },
+      { name: 'Mandarin Oriental', pricePerNight: 45000, rating: 4.8 },
+    ],
+  },
+  'Mexico City': {
+    name: 'Mexico City',
+    flights: [
+      { provider: 'Aeromexico', basePrice: 45000, flightDuration: 5.5 },
+      { provider: 'United', basePrice: 48000, flightDuration: 6 },
+      { provider: 'Delta', basePrice: 46000, flightDuration: 5.5 },
+    ],
+    hotels: [
+      { name: 'Hotel Benidorm', pricePerNight: 8000, rating: 4.0 },
+      { name: 'NH Collection Mexico City', pricePerNight: 13000, rating: 4.3 },
+      { name: 'Four Seasons Mexico City', pricePerNight: 42000, rating: 4.7 },
+    ],
+  },
 };
 
 /**

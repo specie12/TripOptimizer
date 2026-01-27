@@ -72,14 +72,8 @@ class RapidAPIHotelProvider implements HotelIntegrationProvider {
       const destinationId = await this.getDestinationId(criteria.destination);
       if (!destinationId) {
         console.warn(`[${this.name}] Destination not found: ${criteria.destination}`);
-        return {
-          data: [],
-          provider: this.name,
-          status: IntegrationStatus.ERROR,
-          cached: false,
-          timestamp: new Date(),
-          error: `Destination ${criteria.destination} not found`,
-        };
+        // Throw error to trigger fallback to mock provider
+        throw new Error(`Destination ${criteria.destination} not found via API`);
       }
 
       // Step 2: Search for hotels
