@@ -238,6 +238,19 @@ export const DESTINATIONS: Record<string, DestinationData> = {
       { name: 'Ciragan Palace Kempinski', pricePerNight: 58000, rating: 4.8 },
     ],
   },
+  'Cape Town': {
+    name: 'Cape Town',
+    flights: [
+      { provider: 'South African Airways', basePrice: 98000, flightDuration: 18 },
+      { provider: 'Emirates', basePrice: 105000, flightDuration: 20 },
+      { provider: 'Lufthansa', basePrice: 102000, flightDuration: 19 },
+    ],
+    hotels: [
+      { name: 'Camps Bay Retreat', pricePerNight: 20000, rating: 4.4 },
+      { name: 'Table Bay Hotel', pricePerNight: 25000, rating: 4.5 },
+      { name: 'One&Only Cape Town', pricePerNight: 65000, rating: 4.8 },
+    ],
+  },
 };
 
 /**

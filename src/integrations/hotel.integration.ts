@@ -78,6 +78,7 @@ class RapidAPIHotelProvider implements HotelIntegrationProvider {
 
       // Step 2: Search for hotels
       const hotels = await this.searchHotels(destinationInfo.destId, destinationInfo.searchType, criteria);
+      console.log(`[${this.name}] API returned ${hotels.length} raw hotels`);
 
       // Step 3: Transform and filter results
       const results: HotelResult[] = hotels
@@ -85,6 +86,7 @@ class RapidAPIHotelProvider implements HotelIntegrationProvider {
         .filter((hotel) => {
           // Filter by max price if specified
           if (criteria.maxPrice && hotel.priceTotal > criteria.maxPrice) {
+            console.log(`[${this.name}] Filtered out ${hotel.name}: price $${hotel.priceTotal/100} > max $${criteria.maxPrice/100}`);
             return false;
           }
           // Filter by min rating if specified
@@ -95,7 +97,7 @@ class RapidAPIHotelProvider implements HotelIntegrationProvider {
         })
         .slice(0, criteria.maxResults ?? 10);
 
-      console.log(`[${this.name}] Found ${results.length} hotels`);
+      console.log(`[${this.name}] Found ${results.length} hotels after filtering`);
 
       // Cache the results
       cacheService.set('hotels-rapidapi', cacheKey, results);

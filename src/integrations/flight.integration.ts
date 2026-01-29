@@ -100,9 +100,21 @@ class AmadeusFlightProvider implements FlightIntegrationProvider {
       'San Francisco': 'SFO',
       'Miami': 'MIA',
       'Chicago': 'ORD',
+      'Cape Town': 'CPT',
+      'Dubai': 'DXB',
+      'Singapore': 'SIN',
+      'Bangkok': 'BKK',
+      'Rome': 'FCO',
+      'Amsterdam': 'AMS',
+      'Madrid': 'MAD',
+      'Lisbon': 'LIS',
+      'Istanbul': 'IST',
+      'Mexico City': 'MEX',
     };
 
-    return cityToAirport[city] || city.substring(0, 3).toUpperCase();
+    const code = cityToAirport[city] || city.substring(0, 3).toUpperCase();
+    console.log(`[FlightIntegration] Resolved ${city} → ${code}`);
+    return code;
   }
 }
 

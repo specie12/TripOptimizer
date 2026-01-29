@@ -57,6 +57,7 @@ export async function searchFlights(params: {
       adults: params.adults,
       currencyCode: params.currencyCode || 'USD',
       max: 50, // Limit results
+      nonStop: false, // Allow connecting flights
     };
 
     // Add return date if provided
@@ -64,6 +65,7 @@ export async function searchFlights(params: {
       searchParams.returnDate = params.returnDate;
     }
 
+    console.log(`[Amadeus] Searching flights: ${params.originLocationCode} → ${params.destinationLocationCode} on ${params.departureDate}`);
     const response = await amadeus.shopping.flightOffersSearch.get(searchParams);
 
     // Filter by max price if provided
