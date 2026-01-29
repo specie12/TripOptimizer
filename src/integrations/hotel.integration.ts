@@ -69,15 +69,15 @@ class RapidAPIHotelProvider implements HotelIntegrationProvider {
       }
 
       // Step 1: Search for destination to get destination ID
-      const destinationId = await this.getDestinationId(criteria.destination);
-      if (!destinationId) {
+      const destinationInfo = await this.getDestinationId(criteria.destination);
+      if (!destinationInfo) {
         console.warn(`[${this.name}] Destination not found: ${criteria.destination}`);
         // Throw error to trigger fallback to mock provider
         throw new Error(`Destination ${criteria.destination} not found via API`);
       }
 
       // Step 2: Search for hotels
-      const hotels = await this.searchHotels(destinationId, criteria);
+      const hotels = await this.searchHotels(destinationInfo.destId, destinationInfo.searchType, criteria);
 
       // Step 3: Transform and filter results
       const results: HotelResult[] = hotels
@@ -117,28 +117,31 @@ class RapidAPIHotelProvider implements HotelIntegrationProvider {
   /**
    * Get destination ID from destination name
    */
-  private async getDestinationId(destination: string): Promise<string | null> {
+  private async getDestinationId(destination: string): Promise<{ destId: string; searchType: string } | null> {
     try {
-      const response = await axios.get('https://booking-com.p.rapidapi.com/v1/hotels/locations', {
+      const response = await axios.get(`https://${this.host}/api/v1/hotels/searchDestination`, {
         params: {
-          name: destination,
-          locale: 'en-us',
+          query: destination,
         },
         headers: {
-          'X-RapidAPI-Key': this.apiKey,
-          'X-RapidAPI-Host': this.host,
+          'x-rapidapi-host': this.host,
+          'x-rapidapi-key': this.apiKey,
         },
         timeout: 10000,
       });
 
-      if (response.data && response.data.length > 0) {
-        // Return the first match's dest_id
-        return response.data[0].dest_id || response.data[0].city_id || null;
+      if (response.data?.status && response.data?.data && response.data.data.length > 0) {
+        // Return the first match's dest_id and search_type
+        const firstResult = response.data.data[0];
+        return {
+          destId: firstResult.dest_id,
+          searchType: firstResult.search_type || 'city',
+        };
       }
 
       return null;
     } catch (error: any) {
-      console.error(`[${this.name}] Failed to get destination ID:`, error.message);
+      console.error(`[${this.name}] Failed to get destination ID:`, error.response?.status, error.message);
       return null;
     }
   }
@@ -146,32 +149,28 @@ class RapidAPIHotelProvider implements HotelIntegrationProvider {
   /**
    * Search for hotels by destination ID
    */
-  private async searchHotels(destinationId: string, criteria: HotelSearchCriteria): Promise<any[]> {
+  private async searchHotels(destinationId: string, searchType: string, criteria: HotelSearchCriteria): Promise<any[]> {
     try {
-      const response = await axios.get('https://booking-com.p.rapidapi.com/v1/hotels/search', {
+      const response = await axios.get(`https://${this.host}/api/v1/hotels/searchHotels`, {
         params: {
           dest_id: destinationId,
-          dest_type: 'city',
-          checkout_date: criteria.checkOutDate,
-          checkin_date: criteria.checkInDate,
-          adults_number: criteria.guests || 2,
-          room_number: 1,
-          units: 'metric',
-          order_by: 'popularity',
-          locale: 'en-us',
-          currency: 'USD',
-          page_number: 0,
+          search_type: searchType.toUpperCase(),
+          arrival_date: criteria.checkInDate,
+          departure_date: criteria.checkOutDate,
+          adults: criteria.guests || 2,
+          room_qty: 1,
+          currency_code: 'USD',
         },
         headers: {
-          'X-RapidAPI-Key': this.apiKey,
-          'X-RapidAPI-Host': this.host,
+          'x-rapidapi-host': this.host,
+          'x-rapidapi-key': this.apiKey,
         },
         timeout: 15000,
       });
 
-      return response.data?.result || [];
+      return response.data?.data?.hotels || [];
     } catch (error: any) {
-      console.error(`[${this.name}] Failed to search hotels:`, error.message);
+      console.error(`[${this.name}] Failed to search hotels:`, error.response?.status, error.message);
       throw error;
     }
   }
@@ -180,36 +179,41 @@ class RapidAPIHotelProvider implements HotelIntegrationProvider {
    * Transform Booking.com API response to HotelResult format
    */
   private transformHotel(hotel: any, criteria: HotelSearchCriteria): HotelResult {
-    // Extract price information
-    const pricePerNight = hotel.price_breakdown?.gross_price
-      ? Math.round(parseFloat(hotel.price_breakdown.gross_price) * 100) // Convert to cents
-      : hotel.min_total_price
-      ? Math.round(parseFloat(hotel.min_total_price) * 100)
+    // Extract price information from booking-com15 API
+    const pricePerNight = hotel.min_total_price
+      ? Math.round(parseFloat(hotel.min_total_price) * 100) // Convert to cents
+      : hotel.price_breakdown?.gross_price
+      ? Math.round(parseFloat(hotel.price_breakdown.gross_price) * 100)
       : 10000; // Fallback to $100/night
 
     const priceTotal = pricePerNight * criteria.numberOfNights;
 
-    // Extract rating (Booking.com uses 0-10 scale, convert to 0-5)
-    const rating = hotel.review_score
-      ? parseFloat(hotel.review_score) / 2
-      : null;
+    // Extract rating (booking-com15 uses propertyClass or review_score)
+    let rating = null;
+    if (hotel.property_class) {
+      rating = parseFloat(hotel.property_class);
+    } else if (hotel.review_score) {
+      rating = parseFloat(hotel.review_score) / 2; // Convert 0-10 to 0-5
+    }
 
-    // Extract amenities
+    // Extract amenities from property description
     const amenities: string[] = [];
     if (hotel.hotel_facilities) {
       amenities.push(...hotel.hotel_facilities.slice(0, 5));
+    } else if (hotel.unit_configuration_label) {
+      amenities.push(hotel.unit_configuration_label);
     }
 
     // Generate deep link
-    const deepLink = hotel.url || `https://www.booking.com/hotel/${hotel.hotel_id}.html`;
+    const deepLink = hotel.url || `https://www.booking.com/hotel/id${hotel.hotel_id}.html`;
 
     return {
       id: hotel.hotel_id?.toString() || uuidv4(),
-      name: hotel.hotel_name || 'Unknown Hotel',
+      name: hotel.hotel_name || hotel.property?.name || 'Hotel',
       priceTotal,
       pricePerNight,
       rating,
-      reviewCount: hotel.review_nr ? parseInt(hotel.review_nr) : undefined,
+      reviewCount: hotel.review_count || hotel.review_nr ? parseInt(hotel.review_count || hotel.review_nr) : undefined,
       amenities,
       deepLink,
     };
