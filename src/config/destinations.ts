@@ -173,6 +173,71 @@ export const DESTINATIONS: Record<string, DestinationData> = {
       { name: 'Four Seasons Mexico City', pricePerNight: 42000, rating: 4.7 },
     ],
   },
+  'Madrid': {
+    name: 'Madrid',
+    flights: [
+      { provider: 'Iberia', basePrice: 42000, flightDuration: 8 },
+      { provider: 'Air Europa', basePrice: 38000, flightDuration: 8.5 },
+      { provider: 'Delta', basePrice: 46000, flightDuration: 9 },
+    ],
+    hotels: [
+      { name: 'Hotel Puerta del Sol', pricePerNight: 11000, rating: 4.0 },
+      { name: 'Ibis Madrid Centro', pricePerNight: 9000, rating: 3.7 },
+      { name: 'Hotel Ritz Madrid', pricePerNight: 48000, rating: 4.8 },
+    ],
+  },
+  'Lisbon': {
+    name: 'Lisbon',
+    flights: [
+      { provider: 'TAP Portugal', basePrice: 36000, flightDuration: 7.5 },
+      { provider: 'Lufthansa', basePrice: 41000, flightDuration: 8 },
+      { provider: 'United', basePrice: 44000, flightDuration: 9 },
+    ],
+    hotels: [
+      { name: 'Hotel Lisboa', pricePerNight: 10000, rating: 4.1 },
+      { name: 'Ibis Lisboa', pricePerNight: 8000, rating: 3.6 },
+      { name: 'Four Seasons Ritz Lisbon', pricePerNight: 52000, rating: 4.9 },
+    ],
+  },
+  'Los Angeles': {
+    name: 'Los Angeles',
+    flights: [
+      { provider: 'United', basePrice: 32000, flightDuration: 5.5 },
+      { provider: 'Delta', basePrice: 35000, flightDuration: 5.5 },
+      { provider: 'American Airlines', basePrice: 33000, flightDuration: 6 },
+    ],
+    hotels: [
+      { name: 'Ace Hotel Downtown LA', pricePerNight: 18000, rating: 4.2 },
+      { name: 'Holiday Inn LA', pricePerNight: 14000, rating: 3.8 },
+      { name: 'Beverly Wilshire', pricePerNight: 65000, rating: 4.7 },
+    ],
+  },
+  'Miami': {
+    name: 'Miami',
+    flights: [
+      { provider: 'American Airlines', basePrice: 28000, flightDuration: 3.5 },
+      { provider: 'Delta', basePrice: 31000, flightDuration: 3.5 },
+      { provider: 'United', basePrice: 29000, flightDuration: 4 },
+    ],
+    hotels: [
+      { name: 'Yve Hotel Miami', pricePerNight: 16000, rating: 4.1 },
+      { name: 'Hampton Inn Miami Beach', pricePerNight: 13000, rating: 3.9 },
+      { name: 'Fontainebleau Miami Beach', pricePerNight: 55000, rating: 4.6 },
+    ],
+  },
+  'Istanbul': {
+    name: 'Istanbul',
+    flights: [
+      { provider: 'Turkish Airlines', basePrice: 68000, flightDuration: 11 },
+      { provider: 'Lufthansa', basePrice: 75000, flightDuration: 12 },
+      { provider: 'Emirates', basePrice: 72000, flightDuration: 13 },
+    ],
+    hotels: [
+      { name: 'Hotel Sultania', pricePerNight: 9000, rating: 4.2 },
+      { name: 'Ibis Istanbul', pricePerNight: 7000, rating: 3.7 },
+      { name: 'Ciragan Palace Kempinski', pricePerNight: 58000, rating: 4.8 },
+    ],
+  },
 };
 
 /**
