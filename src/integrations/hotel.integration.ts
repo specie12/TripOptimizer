@@ -153,12 +153,24 @@ class RapidAPIHotelProvider implements HotelIntegrationProvider {
    */
   private async searchHotels(destinationId: string, searchType: string, criteria: HotelSearchCriteria): Promise<any[]> {
     try {
+      // Extract date portion only (YYYY-MM-DD) from ISO strings
+      const arrivalDate = criteria.checkInDate.split('T')[0];
+      const departureDate = criteria.checkOutDate.split('T')[0];
+
+      console.log(`[${this.name}] Calling API with params:`, {
+        dest_id: destinationId,
+        search_type: searchType.toUpperCase(),
+        arrival_date: arrivalDate,
+        departure_date: departureDate,
+        adults: criteria.guests || 2,
+      });
+
       const response = await axios.get(`https://${this.host}/api/v1/hotels/searchHotels`, {
         params: {
           dest_id: destinationId,
           search_type: searchType.toUpperCase(),
-          arrival_date: criteria.checkInDate,
-          departure_date: criteria.checkOutDate,
+          arrival_date: arrivalDate,
+          departure_date: departureDate,
           adults: criteria.guests || 2,
           room_qty: 1,
           currency_code: 'USD',
@@ -169,6 +181,10 @@ class RapidAPIHotelProvider implements HotelIntegrationProvider {
         },
         timeout: 15000,
       });
+
+      console.log(`[${this.name}] API response status:`, response.data?.status);
+      console.log(`[${this.name}] API response has data:`, !!response.data?.data);
+      console.log(`[${this.name}] API response hotels array:`, response.data?.data?.hotels?.length || 0);
 
       return response.data?.data?.hotels || [];
     } catch (error: any) {
