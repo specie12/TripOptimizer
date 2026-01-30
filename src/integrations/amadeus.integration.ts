@@ -5,6 +5,7 @@
  * Documentation: https://developers.amadeus.com/
  */
 
+// @ts-ignore - amadeus package doesn't have TypeScript definitions
 import Amadeus from 'amadeus';
 import { FlightBookingConfirmation } from '../types/booking.types';
 
@@ -28,6 +29,52 @@ if (!MOCK_AMADEUS) {
       hostname: environment === 'production' ? 'production' : 'test',
     });
     console.log(`[Amadeus] Initialized in ${environment} mode`);
+  }
+}
+
+/**
+ * Get airport code from city name using Amadeus Location API
+ * Includes retry logic for transient errors and rate limiting
+ */
+export async function getAirportCode(
+  cityName: string,
+  retryCount = 0
+): Promise<string | null> {
+  // Mock mode
+  if (MOCK_AMADEUS || !amadeus) {
+    console.log(`[Amadeus] MOCK: Getting airport code for ${cityName}`);
+    return null;
+  }
+
+  try {
+    const response = await amadeus.referenceData.locations.get({
+      keyword: cityName,
+      subType: 'CITY,AIRPORT',
+    });
+
+    if (response.data && response.data.length > 0) {
+      // Get the first result's IATA code
+      const location = response.data[0];
+      const iataCode = location.iataCode;
+
+      console.log(`[Amadeus] Resolved ${cityName} → ${iataCode} (${location.name})`);
+      return iataCode;
+    }
+
+    console.warn(`[Amadeus] No airport found for ${cityName}`);
+    return null;
+  } catch (error: any) {
+    // Retry on rate limit or transient server errors
+    const statusCode = error.response?.statusCode || error.response?.status;
+    if (retryCount < 2 && (statusCode === 429 || (statusCode >= 500 && statusCode < 600))) {
+      const waitTime = 1000 * (retryCount + 1); // Exponential backoff: 1s, 2s
+      console.log(`[Amadeus] Retrying location search for ${cityName} (attempt ${retryCount + 1}) after ${waitTime}ms`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+      return getAirportCode(cityName, retryCount + 1);
+    }
+
+    console.error(`[Amadeus] Location search error for ${cityName}:`, error.message);
+    return null;
   }
 }
 

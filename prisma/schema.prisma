@@ -442,3 +442,19 @@ model Payment {
   @@index([paymentIntentId])
   @@index([status])
 }
+
+/// Cache for airport code resolution (Phase 1: Global Destination Support)
+/// Stores resolved airport codes to minimize API calls and improve performance
+model AirportCode {
+  id          String   @id @default(cuid())
+  cityName    String   @unique // City name as entered by user
+  iataCode    String   // Resolved IATA airport code (e.g., "YUL")
+  airportName String?  // Optional: Full airport name
+  country     String?  // Optional: Country code or name
+  resolvedBy  String   // Resolution method: "manual" | "amadeus" | "fallback"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([cityName])
+  @@index([iataCode])
+}

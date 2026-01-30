@@ -198,20 +198,31 @@ class RapidAPIHotelProvider implements HotelIntegrationProvider {
    */
   private transformHotel(hotel: any, criteria: HotelSearchCriteria): HotelResult {
     // Extract price information from booking-com15 API
-    const pricePerNight = hotel.min_total_price
-      ? Math.round(parseFloat(hotel.min_total_price) * 100) // Convert to cents
-      : hotel.price_breakdown?.gross_price
-      ? Math.round(parseFloat(hotel.price_breakdown.gross_price) * 100)
-      : 10000; // Fallback to $100/night
+    // The API returns hotel data with nested property object
+    let pricePerNight = 10000; // Default fallback to $100/night
+
+    // Try different price field locations
+    if (hotel.property?.priceBreakdown?.grossPrice?.value) {
+      // booking-com15 API format: hotel.property.priceBreakdown.grossPrice.value
+      pricePerNight = Math.round(parseFloat(hotel.property.priceBreakdown.grossPrice.value) * 100);
+    } else if (hotel.min_total_price) {
+      pricePerNight = Math.round(parseFloat(hotel.min_total_price) * 100);
+    } else if (hotel.price_breakdown?.gross_price) {
+      pricePerNight = Math.round(parseFloat(hotel.price_breakdown.gross_price) * 100);
+    }
 
     const priceTotal = pricePerNight * criteria.numberOfNights;
 
-    // Extract rating (booking-com15 uses propertyClass or review_score)
+    // Extract rating (booking-com15 uses property.propertyClass or property.reviewScore)
     let rating = null;
-    if (hotel.property_class) {
+    if (hotel.property?.propertyClass) {
+      rating = parseFloat(hotel.property.propertyClass);
+    } else if (hotel.property?.reviewScore) {
+      rating = parseFloat(hotel.property.reviewScore) / 2; // Convert 0-10 to 0-5
+    } else if (hotel.property_class) {
       rating = parseFloat(hotel.property_class);
     } else if (hotel.review_score) {
-      rating = parseFloat(hotel.review_score) / 2; // Convert 0-10 to 0-5
+      rating = parseFloat(hotel.review_score) / 2;
     }
 
     // Extract amenities from property description
@@ -226,12 +237,14 @@ class RapidAPIHotelProvider implements HotelIntegrationProvider {
     const deepLink = hotel.url || `https://www.booking.com/hotel/id${hotel.hotel_id}.html`;
 
     return {
-      id: hotel.hotel_id?.toString() || uuidv4(),
+      id: (hotel.hotel_id || hotel.property?.id)?.toString() || uuidv4(),
       name: hotel.hotel_name || hotel.property?.name || 'Hotel',
       priceTotal,
       pricePerNight,
       rating,
-      reviewCount: hotel.review_count || hotel.review_nr ? parseInt(hotel.review_count || hotel.review_nr) : undefined,
+      reviewCount: hotel.property?.reviewCount || hotel.review_count || hotel.review_nr
+        ? parseInt(hotel.property?.reviewCount || hotel.review_count || hotel.review_nr)
+        : undefined,
       amenities,
       deepLink,
     };

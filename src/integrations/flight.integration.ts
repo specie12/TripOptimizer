@@ -15,7 +15,8 @@ import {
 } from '../types/integration.types';
 import { getDestination, MockFlight } from '../config/destinations';
 import { cacheService } from '../services/cache.service';
-import { searchFlights as amadeusSearchFlights } from './amadeus.integration';
+import { searchFlights as amadeusSearchFlights, getAirportCode as amadeusGetAirportCode } from './amadeus.integration';
+import { getCachedAirportCode, cacheAirportCode } from '../services/airport-cache.service';
 
 // =============================================================================
 // AMADEUS FLIGHT PROVIDER (Real API)
@@ -40,8 +41,8 @@ class AmadeusFlightProvider implements FlightIntegrationProvider {
     try {
       // Convert our criteria to Amadeus format
       const amadeusResults = await amadeusSearchFlights({
-        originLocationCode: this.getAirportCode(criteria.origin),
-        destinationLocationCode: this.getAirportCode(criteria.destination),
+        originLocationCode: await this.getAirportCode(criteria.origin),
+        destinationLocationCode: await this.getAirportCode(criteria.destination),
         departureDate: criteria.departureDate.split('T')[0], // YYYY-MM-DD
         returnDate: criteria.returnDate ? criteria.returnDate.split('T')[0] : undefined,
         adults: 1, // TODO: Get from criteria
@@ -86,35 +87,62 @@ class AmadeusFlightProvider implements FlightIntegrationProvider {
   }
 
   /**
-   * Convert city name to airport code (simplified mapping)
+   * Convert city name to airport code using API-first approach with database caching
+   * Resolution order: Database cache → Amadeus API → Emergency fallback → Error
    */
-  private getAirportCode(city: string): string {
-    const cityToAirport: Record<string, string> = {
-      'Toronto': 'YYZ',
+  private async getAirportCode(city: string): Promise<string> {
+    console.log(`[FlightIntegration] Resolving airport code for: ${city}`);
+
+    // Emergency fallback ONLY - used if Amadeus API is completely down
+    // These 10 cities cover ~40% of global travel volume
+    const EMERGENCY_AIRPORT_CODES: Record<string, string> = {
       'New York': 'JFK',
-      'Barcelona': 'BCN',
       'London': 'LHR',
       'Paris': 'CDG',
       'Tokyo': 'NRT',
-      'Los Angeles': 'LAX',
-      'San Francisco': 'SFO',
-      'Miami': 'MIA',
-      'Chicago': 'ORD',
-      'Cape Town': 'CPT',
       'Dubai': 'DXB',
       'Singapore': 'SIN',
-      'Bangkok': 'BKK',
-      'Rome': 'FCO',
-      'Amsterdam': 'AMS',
-      'Madrid': 'MAD',
-      'Lisbon': 'LIS',
-      'Istanbul': 'IST',
-      'Mexico City': 'MEX',
+      'Sydney': 'SYD',
+      'Toronto': 'YYZ',
+      'Los Angeles': 'LAX',
+      'Hong Kong': 'HKG',
     };
 
-    const code = cityToAirport[city] || city.substring(0, 3).toUpperCase();
-    console.log(`[FlightIntegration] Resolved ${city} → ${code}`);
-    return code;
+    // Step 1: Check database cache (fastest - no API call)
+    const cachedCode = await getCachedAirportCode(city);
+    if (cachedCode) {
+      console.log(`[FlightIntegration] ✓ ${city} → ${cachedCode} (cached)`);
+      return cachedCode;
+    }
+
+    // Step 2: Try Amadeus Location API (PRIMARY method)
+    try {
+      const amadeusCode = await amadeusGetAirportCode(city);
+      if (amadeusCode) {
+        console.log(`[FlightIntegration] ✓ ${city} → ${amadeusCode} (Amadeus API)`);
+        // Cache for future requests
+        await cacheAirportCode(city, amadeusCode, 'amadeus');
+        return amadeusCode;
+      }
+    } catch (error: any) {
+      console.warn(`[FlightIntegration] Amadeus API error for ${city}:`, error.message);
+    }
+
+    // Step 3: Emergency fallback (only if Amadeus API failed)
+    if (EMERGENCY_AIRPORT_CODES[city]) {
+      const code = EMERGENCY_AIRPORT_CODES[city];
+      console.log(`[FlightIntegration] ⚠️  ${city} → ${code} (emergency fallback)`);
+      // Cache it so we don't keep hitting this path
+      await cacheAirportCode(city, code, 'manual');
+      return code;
+    }
+
+    // Step 4: Complete failure - throw descriptive error
+    console.error(`[FlightIntegration] ✗ Could not resolve airport code for: ${city}`);
+    throw new Error(
+      `Unable to find airport for "${city}". ` +
+      `Please try: (1) A nearby major city (2) Full city name (3) Airport code directly (e.g., "YUL" for Montreal)`
+    );
   }
 }
 

@@ -20,6 +20,8 @@ import {
   toScoringCandidate,
   GeneratedCandidate,
 } from '../services/candidate.service';
+import { flightIntegration } from '../integrations/flight.integration';
+import { hotelIntegration } from '../integrations/hotel.integration';
 import { generateTripContent } from '../services/claude.service';
 import {
   createTripRequest,
@@ -82,6 +84,46 @@ router.post(
       );
       console.log('Extended budget allocation:', extendedAllocation.allocations);
 
+      // Step 3b: Validate budget is sufficient (Phase 3: Budget Validation)
+      // Only validate if destination is specified (can't estimate for "suggest destinations")
+      if (requestBody.destination) {
+        try {
+          const { isBudgetSufficient } = await import('../services/budget-estimator.service');
+          const budgetCheck = await isBudgetSufficient(
+            requestBody.originCity,
+            requestBody.destination,
+            requestBody.numberOfDays,
+            requestBody.budgetTotal,
+            requestBody.numberOfTravelers || 1
+          );
+
+          if (!budgetCheck.sufficient) {
+            console.warn(`[TripGeneration] Budget too low: $${requestBody.budgetTotal / 100} vs minimum $${budgetCheck.estimate.minimumBudget / 100}`);
+            const response: ApiErrorResponse = {
+              error: 'insufficient_budget',
+              message: `Your budget ($${requestBody.budgetTotal / 100}) is too low for this route.`,
+              data: {
+                minimumBudget: budgetCheck.estimate.minimumBudget,
+                breakdown: {
+                  flights: `$${budgetCheck.estimate.breakdown.flights / 100}`,
+                  hotels: `$${budgetCheck.estimate.breakdown.hotels / 100}`,
+                  activities: `$${budgetCheck.estimate.breakdown.activities / 100}`,
+                  food: `$${budgetCheck.estimate.breakdown.food / 100}`,
+                  total: `$${budgetCheck.estimate.breakdown.total / 100}`,
+                },
+                suggestion: `We recommend at least $${Math.ceil(budgetCheck.estimate.minimumBudget / 100)} for ${requestBody.originCity} → ${requestBody.destination} (${requestBody.numberOfDays} days).`,
+              },
+            };
+            res.status(400).json(response);
+            return;
+          }
+          console.log(`[TripGeneration] ✓ Budget check passed (${budgetCheck.percentageOfMinimum.toFixed(0)}% of minimum)`);
+        } catch (error) {
+          console.warn('[TripGeneration] Budget estimation failed, continuing anyway:', error);
+          // Continue without validation - better to try than block user
+        }
+      }
+
       // Step 3a: Initialize budget allocations in database (Phase 5)
       const { initializeBudgetAllocations } = await import('../services/spend.service');
       const budgetAllocationsByCategory = {
@@ -108,9 +150,85 @@ router.post(
       console.log(`Generated ${candidates.length} candidates`);
 
       if (candidates.length === 0) {
+        // Phase 3: Analyze failure and provide specific error message
+        console.error('[TripGeneration] ✗ No candidates generated, analyzing failure...');
+
+        // Try to determine the specific reason for failure
+        let errorReason = 'unknown';
+        let errorMessage = 'No trip options available.';
+        let suggestion = 'Please try adjusting your search parameters.';
+        let alternatives: string[] = [];
+
+        // Only do detailed diagnosis if destination is specified
+        if (requestBody.destination) {
+          // Check if it's a flight issue
+          try {
+            const testFlight = await flightIntegration.search({
+              origin: requestBody.originCity,
+              destination: requestBody.destination,
+              departureDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              returnDate: new Date(Date.now() + (30 + requestBody.numberOfDays) * 24 * 60 * 60 * 1000).toISOString(),
+              maxResults: 1,
+            });
+
+            if (testFlight.data.length === 0) {
+              errorReason = 'no_flights';
+              errorMessage = `No flights available for ${requestBody.originCity} → ${requestBody.destination}.`;
+              suggestion = 'Please check airport codes or try a nearby major city. You can also enter the airport code directly (e.g., "YUL" for Montreal).';
+            }
+          } catch (flightError: any) {
+            console.error('[TripGeneration] Flight check error:', flightError.message);
+            errorReason = 'flight_error';
+            errorMessage = `Unable to search flights: ${flightError.message}`;
+            suggestion = 'There may be an issue with the origin or destination city name. Try using a nearby major city or airport code.';
+          }
+
+          // Check if it's a hotel issue (only if flights are OK)
+          if (errorReason === 'unknown') {
+            try {
+              const testHotel = await hotelIntegration.search({
+                destination: requestBody.destination,
+                checkInDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                checkOutDate: new Date(Date.now() + (30 + requestBody.numberOfDays) * 24 * 60 * 60 * 1000).toISOString(),
+                numberOfNights: requestBody.numberOfDays,
+                guests: requestBody.numberOfTravelers || 1,
+                maxResults: 1,
+              });
+
+              if (testHotel.data.length === 0) {
+                errorReason = 'no_hotels';
+                errorMessage = `No hotels available in ${requestBody.destination}.`;
+                suggestion = 'This destination may not be supported yet. Try a nearby major city or popular tourist destination.';
+              }
+            } catch (hotelError: any) {
+              console.error('[TripGeneration] Hotel check error:', hotelError.message);
+              errorReason = 'hotel_error';
+              errorMessage = `Unable to search hotels in ${requestBody.destination}.`;
+              suggestion = 'The destination may not be recognized. Try using a well-known city name.';
+            }
+          }
+        } else {
+          // No destination specified - couldn't find any good destinations
+          errorReason = 'no_destinations';
+          errorMessage = 'No suitable destinations found within your budget.';
+          suggestion = 'Try increasing your budget or specifying a destination directly.';
+        }
+
+        // If still unknown, it might be a budget issue
+        if (errorReason === 'unknown') {
+          errorReason = 'budget_too_low';
+          errorMessage = 'No trip options available within your budget.';
+          suggestion = `Try increasing your budget to at least $${Math.ceil(requestBody.budgetTotal * 1.3 / 100)} or reducing the trip duration.`;
+        }
+
         const response: ApiErrorResponse = {
           error: 'no_options',
-          message: 'No trip options available within your budget. Try increasing your budget or adjusting your dates.',
+          message: errorMessage,
+          data: {
+            reason: errorReason,
+            suggestion,
+            alternatives,
+          },
         };
         res.status(400).json(response);
         return;

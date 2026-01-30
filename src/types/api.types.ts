@@ -44,6 +44,9 @@ export interface GenerateTripRequest {
   /** Optional user interests for personalization (Phase 7) */
   interests?: string[]; // InterestCategory values
 
+  /** Number of travelers (Phase 1: Global Destination Support) */
+  numberOfTravelers?: number;
+
   /** Optional user ID for tracking (anonymous if not provided) */
   userId?: string;
 }
@@ -233,4 +236,5 @@ export interface ApiErrorResponse {
   error: string;
   message?: string;
   details?: ValidationError[];
+  data?: any; // Phase 3: Additional error context (budget breakdown, suggestions, etc.)
 }

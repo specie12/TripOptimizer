@@ -20,7 +20,9 @@ import { optimizationRouter } from './routes/optimization.routes'; // Phase 6: O
 import bookingRoutes from './routes/booking.routes'; // Phase 2: Booking orchestration
 import itineraryRoutes from './routes/itinerary.routes'; // Phase 3: Itinerary export
 import tripEditRoutes from './routes/trip-edit.routes'; // Phase 5: Component swap & edit
+import adminRoutes from './routes/admin.routes'; // Phase 4: Admin & monitoring
 import { errorHandler } from './middleware/validation';
+import { logTripGeneration, logApiRequest } from './middleware/request-logger'; // Phase 4: Request logging
 
 // Import agent system
 import { agentRegistry } from './agents/registry';
@@ -47,6 +49,8 @@ app.use((req, res, next) => {
 
 // Middleware
 app.use(express.json());
+app.use(logApiRequest); // Phase 4: Log all API requests
+app.use(logTripGeneration); // Phase 4: Detailed trip generation logging
 
 // Routes
 app.use('/trip', tripRoutes);
@@ -60,6 +64,7 @@ app.use('/optimization', optimizationRouter); // Phase 6: Continuous optimizatio
 app.use('/booking', bookingRoutes); // Phase 2: Booking orchestration
 app.use('/itinerary', itineraryRoutes); // Phase 3: Itinerary export
 app.use('/trip-edit', tripEditRoutes); // Phase 5: Component swap & edit
+app.use('/admin', adminRoutes); // Phase 4: Admin & monitoring
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -95,6 +100,8 @@ app.get('/', (req, res) => {
       'POST /trip-edit/:tripOptionId/swap/activity': 'Swap/add/remove activity (Phase 5)',
       'POST /trip-edit/:tripRequestId/edit': 'Edit trip parameters (Phase 5)',
       'GET /trip-edit/:tripOptionId/budget': 'Get budget breakdown (Phase 5)',
+      'GET /admin/destinations/support': 'Destination support report (Phase 4)',
+      'GET /admin/stats': 'System statistics (Phase 4)',
     },
   });
 });

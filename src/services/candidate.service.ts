@@ -92,6 +92,7 @@ export async function generateCandidates(
 
 /**
  * Generate candidates for a single destination using integrations
+ * Includes provider fallback chain and specific error reporting
  */
 async function generateDestinationCandidates(
   destination: string,
@@ -103,7 +104,8 @@ async function generateDestinationCandidates(
   const candidates: GeneratedCandidate[] = [];
   const nights = request.numberOfDays;
 
-  // Search for flights using integration
+  // Search for flights using integration (has built-in Amadeus → Mock fallback)
+  console.log(`[CandidateService] Searching flights for ${request.originCity} → ${destination}`);
   const flightResponse = await flightIntegration.search({
     origin: request.originCity,
     destination,
@@ -113,7 +115,8 @@ async function generateDestinationCandidates(
     maxResults: 10,
   });
 
-  // Search for hotels using integration
+  // Search for hotels using integration (has built-in RapidAPI → Mock fallback)
+  console.log(`[CandidateService] Searching hotels for ${destination}`);
   const hotelResponse = await hotelIntegration.search({
     destination,
     checkInDate: startDate.toISOString(),
@@ -123,10 +126,22 @@ async function generateDestinationCandidates(
     maxResults: 10,
   });
 
-  // Check if we got any results
-  if (flightResponse.data.length === 0 || hotelResponse.data.length === 0) {
+  // Check if we got any results and log specific failures
+  if (flightResponse.data.length === 0) {
+    console.error(`[CandidateService] ✗ No flights found for ${request.originCity} → ${destination}`);
+    console.error(`[CandidateService]   Reason: ${flightResponse.error || 'Unknown'}`);
+    console.error(`[CandidateService]   Provider: ${flightResponse.provider}`);
     return candidates;
   }
+
+  if (hotelResponse.data.length === 0) {
+    console.error(`[CandidateService] ✗ No hotels found for ${destination}`);
+    console.error(`[CandidateService]   Reason: ${hotelResponse.error || 'Unknown'}`);
+    console.error(`[CandidateService]   Provider: ${hotelResponse.provider}`);
+    return candidates;
+  }
+
+  console.log(`[CandidateService] ✓ Found ${flightResponse.data.length} flights and ${hotelResponse.data.length} hotels for ${destination}`);
 
   // Generate all flight + hotel combinations
   for (const flight of flightResponse.data) {
