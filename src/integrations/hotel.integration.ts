@@ -14,7 +14,7 @@ import {
   IntegrationResponse,
   IntegrationStatus,
 } from '../types/integration.types';
-import { getDestination, MockHotel } from '../config/destinations';
+import { getDestination, getOrGenerateDestination, MockHotel } from '../config/destinations';
 import { cacheService } from '../services/cache.service';
 
 // Environment variables
@@ -285,18 +285,9 @@ class MockHotelProvider implements HotelIntegrationProvider {
       };
     }
 
-    // Get destination data
-    const destData = getDestination(criteria.destination);
-    if (!destData) {
-      return {
-        data: [],
-        provider: this.name,
-        status: IntegrationStatus.MOCK,
-        cached: false,
-        timestamp: new Date(),
-        error: `Destination ${criteria.destination} not found`,
-      };
-    }
+    // Get destination data (falls back to dynamic generation for unknown cities)
+    const destData = getOrGenerateDestination(criteria.destination);
+    console.log(`[MockHotelProvider] Using ${getDestination(criteria.destination) ? 'static' : 'dynamic'} data for ${criteria.destination}`);
 
     // Convert mock hotels to integration format
     const results: HotelResult[] = destData.hotels

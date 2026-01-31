@@ -14,6 +14,7 @@
 
 import React from 'react';
 import { useFormContext } from '../../contexts/FormContext';
+import CityAutocomplete from '../ui/CityAutocomplete';
 
 export default function BudgetBasicsStep() {
   const { formData, updateFormData, nextStep, isStepValid } = useFormContext();
@@ -68,11 +69,10 @@ export default function BudgetBasicsStep() {
             <label htmlFor="origin" className="block text-sm font-medium text-gray-700 mb-2">
               Flying From <span className="text-red-500">*</span>
             </label>
-            <input
+            <CityAutocomplete
               id="origin"
-              type="text"
               value={formData.originCity}
-              onChange={(e) => updateFormData({ originCity: e.target.value })}
+              onChange={(val) => updateFormData({ originCity: val })}
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:border-purple-500 transition-colors"
               placeholder="e.g., New York"
             />
@@ -83,11 +83,10 @@ export default function BudgetBasicsStep() {
             <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-2">
               Destination <span className="text-gray-400 text-xs">(Optional)</span>
             </label>
-            <input
+            <CityAutocomplete
               id="destination"
-              type="text"
               value={formData.destination || ''}
-              onChange={(e) => updateFormData({ destination: e.target.value })}
+              onChange={(val) => updateFormData({ destination: val })}
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:border-purple-500 transition-colors"
               placeholder="Leave blank for suggestions"
             />

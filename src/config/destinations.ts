@@ -742,3 +742,246 @@ export function getRandomDestinations(count: number): string[] {
   const shuffled = [...all].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, Math.min(count, all.length));
 }
+
+// =============================================================================
+// DYNAMIC DESTINATION GENERATION
+// =============================================================================
+
+interface RegionProfile {
+  flightPriceRange: [number, number]; // in cents
+  flightDurationRange: [number, number]; // in hours
+  airlines: string[];
+  hotelMultiplier: number; // relative to base hotel prices
+  budgetHotels: string[];
+  midHotels: string[];
+  luxuryHotels: string[];
+}
+
+const REGION_PROFILES: Record<string, RegionProfile> = {
+  northAmericaDomestic: {
+    flightPriceRange: [20000, 45000],
+    flightDurationRange: [2, 6],
+    airlines: ['United Airlines', 'Delta Air Lines', 'American Airlines', 'Air Canada', 'WestJet', 'Southwest Airlines'],
+    hotelMultiplier: 1.0,
+    budgetHotels: ['Holiday Inn Express', 'La Quinta', 'Best Western'],
+    midHotels: ['Marriott', 'Hilton Garden Inn', 'Hyatt Place'],
+    luxuryHotels: ['Fairmont', 'The Ritz-Carlton', 'Four Seasons'],
+  },
+  caribbean: {
+    flightPriceRange: [25000, 50000],
+    flightDurationRange: [3, 6],
+    airlines: ['JetBlue', 'American Airlines', 'Delta Air Lines', 'Caribbean Airlines'],
+    hotelMultiplier: 1.1,
+    budgetHotels: ['Holiday Inn', 'Comfort Suites', 'Best Western'],
+    midHotels: ['Marriott Resort', 'Hilton', 'Hyatt'],
+    luxuryHotels: ['Sandals', 'The Ritz-Carlton', 'Four Seasons'],
+  },
+  europe: {
+    flightPriceRange: [35000, 65000],
+    flightDurationRange: [7, 11],
+    airlines: ['Lufthansa', 'Air France', 'British Airways', 'Delta Air Lines', 'KLM'],
+    hotelMultiplier: 1.2,
+    budgetHotels: ['Ibis', 'Premier Inn', 'Motel One'],
+    midHotels: ['Novotel', 'Mercure', 'Hilton Garden Inn'],
+    luxuryHotels: ['The Ritz', 'Mandarin Oriental', 'Four Seasons'],
+  },
+  middleEast: {
+    flightPriceRange: [65000, 100000],
+    flightDurationRange: [12, 16],
+    airlines: ['Emirates', 'Qatar Airways', 'Etihad Airways', 'Turkish Airlines'],
+    hotelMultiplier: 1.5,
+    budgetHotels: ['Ibis', 'Holiday Inn', 'Citymax'],
+    midHotels: ['Marriott', 'Hilton', 'Radisson Blu'],
+    luxuryHotels: ['Burj Al Arab', 'The Ritz-Carlton', 'Four Seasons'],
+  },
+  eastAsia: {
+    flightPriceRange: [75000, 100000],
+    flightDurationRange: [13, 18],
+    airlines: ['ANA', 'Japan Airlines', 'Korean Air', 'United Airlines', 'Cathay Pacific'],
+    hotelMultiplier: 1.3,
+    budgetHotels: ['APA Hotel', 'Toyoko Inn', 'ibis Styles'],
+    midHotels: ['Marriott', 'Hilton', 'Hyatt Regency'],
+    luxuryHotels: ['The Peninsula', 'Mandarin Oriental', 'Park Hyatt'],
+  },
+  southeastAsia: {
+    flightPriceRange: [70000, 95000],
+    flightDurationRange: [16, 22],
+    airlines: ['Singapore Airlines', 'Thai Airways', 'ANA', 'Vietnam Airlines'],
+    hotelMultiplier: 0.8,
+    budgetHotels: ['ibis', 'Tune Hotel', 'Red Planet'],
+    midHotels: ['Novotel', 'Holiday Inn', 'Marriott'],
+    luxuryHotels: ['Mandarin Oriental', 'The Shangri-La', 'Banyan Tree'],
+  },
+  southAmerica: {
+    flightPriceRange: [55000, 85000],
+    flightDurationRange: [8, 12],
+    airlines: ['LATAM Airlines', 'Avianca', 'Delta Air Lines', 'Copa Airlines'],
+    hotelMultiplier: 0.9,
+    budgetHotels: ['ibis', 'Holiday Inn Express', 'Best Western'],
+    midHotels: ['Marriott', 'Hilton', 'Novotel'],
+    luxuryHotels: ['Belmond', 'Four Seasons', 'The Ritz-Carlton'],
+  },
+  africa: {
+    flightPriceRange: [80000, 110000],
+    flightDurationRange: [14, 20],
+    airlines: ['Ethiopian Airlines', 'Kenya Airways', 'Emirates', 'South African Airways'],
+    hotelMultiplier: 0.85,
+    budgetHotels: ['ibis', 'City Lodge', 'Protea Hotel'],
+    midHotels: ['Radisson Blu', 'Hilton', 'Marriott'],
+    luxuryHotels: ['Four Seasons', 'One&Only', 'The Saxon'],
+  },
+  oceania: {
+    flightPriceRange: [100000, 130000],
+    flightDurationRange: [17, 22],
+    airlines: ['Qantas', 'Air New Zealand', 'United Airlines', 'Hawaiian Airlines'],
+    hotelMultiplier: 1.4,
+    budgetHotels: ['ibis', 'Travelodge', 'Quest'],
+    midHotels: ['Novotel', 'Holiday Inn', 'Crowne Plaza'],
+    luxuryHotels: ['Park Hyatt', 'InterContinental', 'Four Seasons'],
+  },
+  default: {
+    flightPriceRange: [45000, 75000],
+    flightDurationRange: [8, 14],
+    airlines: ['United Airlines', 'Delta Air Lines', 'American Airlines'],
+    hotelMultiplier: 1.0,
+    budgetHotels: ['Holiday Inn Express', 'Best Western', 'Comfort Inn'],
+    midHotels: ['Marriott', 'Hilton', 'Hyatt'],
+    luxuryHotels: ['Four Seasons', 'The Ritz-Carlton', 'Mandarin Oriental'],
+  },
+};
+
+const KNOWN_CITY_REGIONS: Record<string, string> = {
+  // North America domestic
+  toronto: 'northAmericaDomestic', calgary: 'northAmericaDomestic', edmonton: 'northAmericaDomestic',
+  ottawa: 'northAmericaDomestic', winnipeg: 'northAmericaDomestic',
+  halifax: 'northAmericaDomestic', victoria: 'northAmericaDomestic',
+  quebec: 'northAmericaDomestic', 'quebec city': 'northAmericaDomestic',
+  saskatoon: 'northAmericaDomestic', regina: 'northAmericaDomestic',
+  nashville: 'northAmericaDomestic', austin: 'northAmericaDomestic',
+  atlanta: 'northAmericaDomestic', phoenix: 'northAmericaDomestic',
+  dallas: 'northAmericaDomestic', houston: 'northAmericaDomestic',
+  denver: 'northAmericaDomestic', seattle: 'northAmericaDomestic',
+  portland: 'northAmericaDomestic', minneapolis: 'northAmericaDomestic',
+  charlotte: 'northAmericaDomestic', indianapolis: 'northAmericaDomestic',
+  columbus: 'northAmericaDomestic', detroit: 'northAmericaDomestic',
+  'salt lake city': 'northAmericaDomestic', pittsburgh: 'northAmericaDomestic',
+  milwaukee: 'northAmericaDomestic', 'kansas city': 'northAmericaDomestic',
+  raleigh: 'northAmericaDomestic', tampa: 'northAmericaDomestic',
+  // Caribbean
+  'punta cana': 'caribbean', nassau: 'caribbean',
+  kingston: 'caribbean', 'montego bay': 'caribbean',
+  // Europe
+  nice: 'europe', milan: 'europe', dublin: 'europe',
+  munich: 'europe', vienna: 'europe', prague: 'europe',
+  brussels: 'europe', edinburgh: 'europe', zurich: 'europe',
+  geneva: 'europe', copenhagen: 'europe', oslo: 'europe',
+  helsinki: 'europe', warsaw: 'europe', budapest: 'europe',
+  krakow: 'europe', porto: 'europe', seville: 'europe',
+  // Middle East
+  doha: 'middleEast', riyadh: 'middleEast',
+  muscat: 'middleEast', kuwait: 'middleEast', bahrain: 'middleEast',
+  // East Asia
+  osaka: 'eastAsia', kyoto: 'eastAsia', busan: 'eastAsia',
+  taipei: 'eastAsia', guangzhou: 'eastAsia', shenzhen: 'eastAsia',
+  // Southeast Asia
+  'ho chi minh city': 'southeastAsia', hanoi: 'southeastAsia',
+  'kuala lumpur': 'southeastAsia', jakarta: 'southeastAsia',
+  manila: 'southeastAsia', 'phnom penh': 'southeastAsia',
+  // South America
+  medellin: 'southAmerica', cartagena: 'southAmerica',
+  quito: 'southAmerica', cusco: 'southAmerica',
+  montevideo: 'southAmerica', 'la paz': 'southAmerica',
+  // Africa
+  marrakech: 'africa', lagos: 'africa', accra: 'africa',
+  addis: 'africa', 'addis ababa': 'africa', dar: 'africa',
+  'dar es salaam': 'africa', casablanca: 'africa',
+  // Oceania
+  melbourne: 'oceania', brisbane: 'oceania', perth: 'oceania',
+  auckland: 'oceania', wellington: 'oceania', queenstown: 'oceania',
+  fiji: 'oceania',
+};
+
+function detectRegion(cityName: string): string {
+  const normalized = cityName.trim().toLowerCase();
+  return KNOWN_CITY_REGIONS[normalized] ?? 'default';
+}
+
+function cityHash(cityName: string): number {
+  let hash = 0;
+  const str = cityName.toLowerCase();
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash);
+}
+
+function seededRandom(seed: number, index: number): number {
+  const x = Math.sin(seed + index * 127.1) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+const dynamicDestinationCache = new Map<string, DestinationData>();
+
+function generateDynamicDestination(cityName: string): DestinationData {
+  const cacheKey = cityName.trim().toLowerCase();
+  const cached = dynamicDestinationCache.get(cacheKey);
+  if (cached) return cached;
+
+  const region = detectRegion(cityName);
+  const profile = REGION_PROFILES[region];
+  const seed = cityHash(cityName);
+
+  // Generate 3 flights
+  const flights: MockFlight[] = [];
+  for (let i = 0; i < 3; i++) {
+    const r = seededRandom(seed, i);
+    const [minPrice, maxPrice] = profile.flightPriceRange;
+    const [minDur, maxDur] = profile.flightDurationRange;
+    const airline = profile.airlines[Math.floor(seededRandom(seed, i + 10) * profile.airlines.length)];
+    flights.push({
+      provider: airline,
+      basePrice: Math.round(minPrice + r * (maxPrice - minPrice)),
+      flightDuration: Math.round((minDur + seededRandom(seed, i + 20) * (maxDur - minDur)) * 10) / 10,
+    });
+  }
+
+  // Generate 3 hotels (budget, mid, luxury)
+  const hotels: MockHotel[] = [];
+  const hotelTiers: { names: string[]; baseRange: [number, number]; ratingRange: [number, number] }[] = [
+    { names: profile.budgetHotels, baseRange: [7000, 13000], ratingRange: [3.0, 3.8] },
+    { names: profile.midHotels, baseRange: [14000, 25000], ratingRange: [3.8, 4.3] },
+    { names: profile.luxuryHotels, baseRange: [35000, 70000], ratingRange: [4.3, 4.9] },
+  ];
+
+  const displayName = cityName.trim().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+
+  for (let i = 0; i < 3; i++) {
+    const tier = hotelTiers[i];
+    const r = seededRandom(seed, i + 30);
+    const brand = tier.names[Math.floor(seededRandom(seed, i + 40) * tier.names.length)];
+    const [minPrice, maxPrice] = tier.baseRange;
+    const adjustedPrice = Math.round((minPrice + r * (maxPrice - minPrice)) * profile.hotelMultiplier);
+    const [minRating, maxRating] = tier.ratingRange;
+    const rating = Math.round((minRating + seededRandom(seed, i + 50) * (maxRating - minRating)) * 10) / 10;
+
+    hotels.push({
+      name: `${brand} ${displayName}`,
+      pricePerNight: adjustedPrice,
+      rating,
+    });
+  }
+
+  const destination: DestinationData = { name: displayName, flights, hotels };
+  dynamicDestinationCache.set(cacheKey, destination);
+  return destination;
+}
+
+/**
+ * Get destination data, falling back to dynamic generation for unknown cities.
+ * Always returns data — never returns undefined.
+ */
+export function getOrGenerateDestination(name: string): DestinationData {
+  return getDestination(name) ?? generateDynamicDestination(name);
+}

@@ -13,7 +13,7 @@ import {
   IntegrationResponse,
   IntegrationStatus,
 } from '../types/integration.types';
-import { getDestination, MockFlight } from '../config/destinations';
+import { getDestination, getOrGenerateDestination, MockFlight } from '../config/destinations';
 import { cacheService } from '../services/cache.service';
 import { searchFlights as amadeusSearchFlights, getAirportCode as amadeusGetAirportCode } from './amadeus.integration';
 import { getCachedAirportCode, cacheAirportCode } from '../services/airport-cache.service';
@@ -46,7 +46,7 @@ class AmadeusFlightProvider implements FlightIntegrationProvider {
         departureDate: criteria.departureDate.split('T')[0], // YYYY-MM-DD
         returnDate: criteria.returnDate ? criteria.returnDate.split('T')[0] : undefined,
         adults: 1, // TODO: Get from criteria
-        maxPrice: criteria.maxPrice,
+        maxPrice: criteria.maxPrice ? Math.floor(criteria.maxPrice / 100) : undefined, // Convert cents to dollars for Amadeus
         currencyCode: 'USD',
       });
 
@@ -180,18 +180,9 @@ class MockFlightProvider implements FlightIntegrationProvider {
       };
     }
 
-    // Get destination data
-    const destData = getDestination(criteria.destination);
-    if (!destData) {
-      return {
-        data: [],
-        provider: this.name,
-        status: IntegrationStatus.MOCK,
-        cached: false,
-        timestamp: new Date(),
-        error: `Destination ${criteria.destination} not found`,
-      };
-    }
+    // Get destination data (falls back to dynamic generation for unknown cities)
+    const destData = getOrGenerateDestination(criteria.destination);
+    console.log(`[MockFlightProvider] Using ${getDestination(criteria.destination) ? 'static' : 'dynamic'} data for ${criteria.destination}`);
 
     // Convert mock flights to integration format
     const results: FlightResult[] = destData.flights
