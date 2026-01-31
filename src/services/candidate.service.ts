@@ -111,7 +111,6 @@ async function generateDestinationCandidates(
     destination,
     departureDate: startDate.toISOString(),
     returnDate: endDate.toISOString(),
-    maxPrice: allocation.maxFlightBudget,
     maxResults: 10,
   });
 
@@ -122,7 +121,6 @@ async function generateDestinationCandidates(
     checkInDate: startDate.toISOString(),
     checkOutDate: endDate.toISOString(),
     numberOfNights: nights,
-    maxPrice: allocation.maxHotelBudget,
     maxResults: 10,
   });
 

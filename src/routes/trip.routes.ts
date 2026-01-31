@@ -153,28 +153,30 @@ router.post(
         // Phase 3: Analyze failure and provide specific error message
         console.error('[TripGeneration] ✗ No candidates generated, analyzing failure...');
 
-        // Try to determine the specific reason for failure
         let errorReason = 'unknown';
         let errorMessage = 'No trip options available.';
         let suggestion = 'Please try adjusting your search parameters.';
-        let alternatives: string[] = [];
+        let diagnosticData: Record<string, any> = {};
 
-        // Only do detailed diagnosis if destination is specified
         if (requestBody.destination) {
-          // Check if it's a flight issue
+          // Re-search without budget caps to find cheapest available prices
+          let cheapestFlight: number | null = null;
+          let cheapestHotelPerNight: number | null = null;
+          let flightsFound = false;
+          let hotelsFound = false;
+
           try {
             const testFlight = await flightIntegration.search({
               origin: requestBody.originCity,
               destination: requestBody.destination,
               departureDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
               returnDate: new Date(Date.now() + (30 + requestBody.numberOfDays) * 24 * 60 * 60 * 1000).toISOString(),
-              maxResults: 1,
+              maxResults: 5,
             });
 
-            if (testFlight.data.length === 0) {
-              errorReason = 'no_flights';
-              errorMessage = `No flights available for ${requestBody.originCity} → ${requestBody.destination}.`;
-              suggestion = 'Please check airport codes or try a nearby major city. You can also enter the airport code directly (e.g., "YUL" for Montreal).';
+            if (testFlight.data.length > 0) {
+              flightsFound = true;
+              cheapestFlight = Math.min(...testFlight.data.map((f) => f.price));
             }
           } catch (flightError: any) {
             console.error('[TripGeneration] Flight check error:', flightError.message);
@@ -183,8 +185,7 @@ router.post(
             suggestion = 'There may be an issue with the origin or destination city name. Try using a nearby major city or airport code.';
           }
 
-          // Check if it's a hotel issue (only if flights are OK)
-          if (errorReason === 'unknown') {
+          if (errorReason !== 'flight_error') {
             try {
               const testHotel = await hotelIntegration.search({
                 destination: requestBody.destination,
@@ -192,13 +193,12 @@ router.post(
                 checkOutDate: new Date(Date.now() + (30 + requestBody.numberOfDays) * 24 * 60 * 60 * 1000).toISOString(),
                 numberOfNights: requestBody.numberOfDays,
                 guests: requestBody.numberOfTravelers || 1,
-                maxResults: 1,
+                maxResults: 5,
               });
 
-              if (testHotel.data.length === 0) {
-                errorReason = 'no_hotels';
-                errorMessage = `No hotels available in ${requestBody.destination}.`;
-                suggestion = 'This destination may not be supported yet. Try a nearby major city or popular tourist destination.';
+              if (testHotel.data.length > 0) {
+                hotelsFound = true;
+                cheapestHotelPerNight = Math.min(...testHotel.data.map((h) => h.pricePerNight));
               }
             } catch (hotelError: any) {
               console.error('[TripGeneration] Hotel check error:', hotelError.message);
@@ -207,14 +207,44 @@ router.post(
               suggestion = 'The destination may not be recognized. Try using a well-known city name.';
             }
           }
+
+          // Build specific error based on what was found
+          if (errorReason === 'unknown') {
+            if (!flightsFound) {
+              errorReason = 'no_flights';
+              errorMessage = `No flights available for ${requestBody.originCity} → ${requestBody.destination}.`;
+              suggestion = 'Please check airport codes or try a nearby major city. You can also enter the airport code directly (e.g., "YUL" for Montreal).';
+            } else if (!hotelsFound) {
+              errorReason = 'no_hotels';
+              errorMessage = `No hotels available in ${requestBody.destination}.`;
+              suggestion = 'This destination may not be supported yet. Try a nearby major city or popular tourist destination.';
+            } else if (cheapestFlight !== null && cheapestHotelPerNight !== null) {
+              // Both found but all combos exceeded budget
+              const cheapestHotelTotal = cheapestHotelPerNight * requestBody.numberOfDays;
+              const cheapestCombination = cheapestFlight + cheapestHotelTotal;
+              const budgetDollars = Math.floor(requestBody.budgetTotal / 100);
+              const comboDollars = Math.ceil(cheapestCombination / 100);
+              const flightDollars = Math.ceil(cheapestFlight / 100);
+              const hotelNightDollars = Math.ceil(cheapestHotelPerNight / 100);
+
+              errorReason = 'budget_too_low';
+              errorMessage = `We found flights from $${flightDollars} and hotels from $${hotelNightDollars}/night, but the cheapest combination ($${comboDollars}) exceeds your $${budgetDollars} budget.`;
+              suggestion = `Try increasing your budget to at least $${comboDollars} or reducing the trip duration.`;
+              diagnosticData = {
+                cheapestFlight: cheapestFlight,
+                cheapestHotelPerNight: cheapestHotelPerNight,
+                cheapestCombination: cheapestCombination,
+                budgetShortfall: cheapestCombination - requestBody.budgetTotal,
+              };
+            }
+          }
         } else {
-          // No destination specified - couldn't find any good destinations
           errorReason = 'no_destinations';
           errorMessage = 'No suitable destinations found within your budget.';
           suggestion = 'Try increasing your budget or specifying a destination directly.';
         }
 
-        // If still unknown, it might be a budget issue
+        // Fallback if still unknown
         if (errorReason === 'unknown') {
           errorReason = 'budget_too_low';
           errorMessage = 'No trip options available within your budget.';
@@ -227,7 +257,7 @@ router.post(
           data: {
             reason: errorReason,
             suggestion,
-            alternatives,
+            ...diagnosticData,
           },
         };
         res.status(400).json(response);

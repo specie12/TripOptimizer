@@ -25,8 +25,11 @@ export async function generateTrip(
   });
 
   if (!response.ok) {
-    const error: ApiErrorResponse = await response.json();
-    throw new Error(error.message || 'Failed to generate trip options');
+    const errorBody: ApiErrorResponse = await response.json();
+    const err = new Error(errorBody.message || 'Failed to generate trip options');
+    (err as any).data = errorBody.data;
+    (err as any).errorCode = errorBody.error;
+    throw err;
   }
 
   return response.json();

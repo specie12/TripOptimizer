@@ -102,6 +102,7 @@ export interface ApiErrorResponse {
   error: string;
   message?: string;
   details?: ValidationError[];
+  data?: Record<string, any>;
 }
 
 export interface ValidationError {

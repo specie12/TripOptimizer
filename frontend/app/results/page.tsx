@@ -59,12 +59,12 @@ function ResultsContent() {
 
   const [tripOptions, setTripOptions] = useState<TripOptionResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ message: string; suggestion?: string; data?: any } | null>(null);
 
   useEffect(() => {
     async function fetchTrips() {
       if (!originCity) {
-        setError('Missing origin city');
+        setError({ message: 'Missing origin city' });
         setLoading(false);
         return;
       }
@@ -88,8 +88,11 @@ function ResultsContent() {
         response.options.forEach((option) => {
           trackTripView(option.id, option.destination);
         });
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load trips');
+      } catch (err: any) {
+        const message = err instanceof Error ? err.message : 'Failed to load trips';
+        const suggestion = err?.data?.suggestion;
+        const data = err?.data;
+        setError({ message, suggestion, data });
       } finally {
         setLoading(false);
       }
@@ -157,14 +160,41 @@ function ResultsContent() {
 
       {/* Error State */}
       {error && !loading && (
-        <div className="text-center py-12">
-          <p className="text-red-600 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="text-blue-600 hover:underline"
-          >
-            Try again
-          </button>
+        <div className="text-center py-12 max-w-lg mx-auto">
+          <p className="text-red-600 font-semibold mb-2">{error.message}</p>
+          {error.suggestion && (
+            <p className="text-gray-500 text-sm mb-4">{error.suggestion}</p>
+          )}
+          {error.data?.cheapestFlight != null && error.data?.cheapestHotelPerNight != null && (
+            <p className="text-gray-400 text-xs mb-4">
+              Cheapest flight: ${Math.ceil(error.data.cheapestFlight / 100)} &middot; Cheapest hotel: ${Math.ceil(error.data.cheapestHotelPerNight / 100)}/night
+            </p>
+          )}
+          <div className="flex gap-4 justify-center">
+            <a
+              href={buildEditUrl({
+                originCity,
+                destination,
+                startDate,
+                days,
+                budgetDollars,
+                style,
+                pace,
+                accommodation,
+                interests,
+                travelers,
+              })}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+            >
+              Adjust Search
+            </a>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+            >
+              Try Again
+            </button>
+          </div>
         </div>
       )}
 
