@@ -21,6 +21,7 @@ import {
   GeneratedCandidate,
 } from '../services/candidate.service';
 import { flightIntegration } from '../integrations/flight.integration';
+import { searchCities } from '../integrations/amadeus.integration';
 import { hotelIntegration } from '../integrations/hotel.integration';
 import { generateTripContent } from '../services/claude.service';
 import {
@@ -441,6 +442,29 @@ router.post(
     }
   }
 );
+
+/**
+ * GET /trip/city-search?q=<keyword>
+ *
+ * Typeahead endpoint for city/airport autocomplete.
+ * Calls Amadeus Location API and returns up to 8 results.
+ */
+router.get('/city-search', async (req: Request, res: Response): Promise<void> => {
+  const keyword = (req.query.q as string || '').trim();
+
+  if (keyword.length < 2) {
+    res.json([]);
+    return;
+  }
+
+  try {
+    const results = await searchCities(keyword);
+    res.json(results);
+  } catch (error) {
+    console.error('[city-search] Error:', error);
+    res.json([]);
+  }
+});
 
 /**
  * GET /trip/health

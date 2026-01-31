@@ -36,6 +36,31 @@ export async function generateTrip(
 }
 
 /**
+ * City search result from Amadeus Location API
+ */
+export interface CitySearchResult {
+  name: string;
+  iataCode: string;
+  country: string;
+  subType: string;
+}
+
+/**
+ * Search cities/airports by keyword for typeahead autocomplete
+ */
+export async function searchCities(query: string): Promise<CitySearchResult[]> {
+  const response = await fetch(
+    `${API_BASE}/trip/city-search?q=${encodeURIComponent(query)}`
+  );
+
+  if (!response.ok) {
+    return [];
+  }
+
+  return response.json();
+}
+
+/**
  * Health check endpoint
  */
 export async function checkHealth(): Promise<{ status: string }> {

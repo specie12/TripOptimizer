@@ -241,6 +241,46 @@ export async function cancelFlight(orderId: string): Promise<{
 }
 
 /**
+ * Search cities/airports by keyword for typeahead autocomplete.
+ * Returns up to 8 results with name, IATA code, country, and subType.
+ */
+export async function searchCities(keyword: string): Promise<
+  Array<{ name: string; iataCode: string; country: string; subType: string }>
+> {
+  if (!amadeus) {
+    throw new Error('Amadeus not configured — set AMADEUS_API_KEY and AMADEUS_API_SECRET');
+  }
+
+  const response = await amadeus.referenceData.locations.get({
+    keyword,
+    subType: 'CITY,AIRPORT',
+  });
+
+  if (!response.data || response.data.length === 0) {
+    return [];
+  }
+
+  // Filter to results with an IATA code
+  const withIata = response.data.filter((loc: any) => loc.iataCode);
+
+  // Sort: CITY first, then by traveler relevance score descending
+  withIata.sort((a: any, b: any) => {
+    if (a.subType === 'CITY' && b.subType !== 'CITY') return -1;
+    if (a.subType !== 'CITY' && b.subType === 'CITY') return 1;
+    const scoreA = a.analytics?.travelers?.score ?? 0;
+    const scoreB = b.analytics?.travelers?.score ?? 0;
+    return scoreB - scoreA;
+  });
+
+  return withIata.slice(0, 8).map((loc: any) => ({
+    name: loc.name,
+    iataCode: loc.iataCode,
+    country: loc.address?.countryCode || '',
+    subType: loc.subType,
+  }));
+}
+
+/**
  * Get flight booking details
  */
 export async function getFlightOrder(orderId: string): Promise<any> {
