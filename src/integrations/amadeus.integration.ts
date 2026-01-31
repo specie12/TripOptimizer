@@ -46,11 +46,31 @@ export async function getAirportCode(
     });
 
     if (response.data && response.data.length > 0) {
-      // Get the first result's IATA code
-      const location = response.data[0];
-      const iataCode = location.iataCode;
+      // Filter to results that have an IATA code
+      const withIata = response.data.filter((loc: any) => loc.iataCode);
+      if (withIata.length === 0) {
+        console.warn(`[Amadeus] No results with IATA code for ${cityName}`);
+        return null;
+      }
 
-      console.log(`[Amadeus] Resolved ${cityName} → ${iataCode} (${location.name})`);
+      // Prefer CITY results (they map to the main international airport)
+      const cities = withIata.filter((loc: any) => loc.subType === 'CITY');
+      let location: any;
+
+      if (cities.length > 0) {
+        // Pick the city with the highest relevance score
+        location = cities.reduce((best: any, cur: any) =>
+          (cur.analytics?.travelers?.score ?? 0) > (best.analytics?.travelers?.score ?? 0) ? cur : best
+        );
+      } else {
+        // Fallback: pick the airport with the highest relevance score
+        location = withIata.reduce((best: any, cur: any) =>
+          (cur.analytics?.travelers?.score ?? 0) > (best.analytics?.travelers?.score ?? 0) ? cur : best
+        );
+      }
+
+      const iataCode = location.iataCode;
+      console.log(`[Amadeus] Resolved ${cityName} → ${iataCode} (${location.name}, ${location.subType}, relevance=${location.analytics?.travelers?.score ?? 'N/A'})`);
       return iataCode;
     }
 

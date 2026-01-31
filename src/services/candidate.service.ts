@@ -113,6 +113,7 @@ async function generateDestinationCandidates(
     departureDate: startDate.toISOString(),
     returnDate: endDate.toISOString(),
     maxResults: 10,
+    maxPrice: request.budgetTotal, // Use full budget — a cheap hotel can offset an expensive flight
   });
 
   // Search for hotels using integration (has built-in RapidAPI → Mock fallback)
@@ -123,6 +124,7 @@ async function generateDestinationCandidates(
     checkOutDate: endDate.toISOString(),
     numberOfNights: nights,
     maxResults: 10,
+    maxPrice: request.budgetTotal, // Use full budget as upper bound for hotel filtering
   });
 
   // Check if we got any results and log specific failures
