@@ -2,7 +2,7 @@
  * Hotel Integration
  *
  * Abstraction layer for hotel search APIs.
- * Supports mock provider for development and real providers for production.
+ * Uses RapidAPI/Booking.com for real hotel data.
  */
 
 import { v4 as uuidv4 } from 'uuid';
@@ -14,11 +14,9 @@ import {
   IntegrationResponse,
   IntegrationStatus,
 } from '../types/integration.types';
-import { getDestination, getOrGenerateDestination, MockHotel } from '../config/destinations';
 import { cacheService } from '../services/cache.service';
 
 // Environment variables
-const MOCK_HOTELS = process.env.MOCK_HOTELS === 'true';
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
 const RAPIDAPI_HOST = process.env.RAPIDAPI_HOTELS_HOST || 'booking-com.p.rapidapi.com';
 
@@ -72,7 +70,6 @@ class RapidAPIHotelProvider implements HotelIntegrationProvider {
       const destinationInfo = await this.getDestinationId(criteria.destination);
       if (!destinationInfo) {
         console.warn(`[${this.name}] Destination not found: ${criteria.destination}`);
-        // Throw error to trigger fallback to mock provider
         throw new Error(`Destination ${criteria.destination} not found via API`);
       }
 
@@ -111,7 +108,6 @@ class RapidAPIHotelProvider implements HotelIntegrationProvider {
       };
     } catch (error: any) {
       console.error(`[${this.name}] Search failed:`, error.message);
-      // Re-throw error to trigger fallback to next provider
       throw error;
     }
   }
@@ -252,114 +248,6 @@ class RapidAPIHotelProvider implements HotelIntegrationProvider {
 }
 
 // =============================================================================
-// MOCK HOTEL PROVIDER
-// =============================================================================
-
-/**
- * Mock hotel provider using static destination data
- */
-class MockHotelProvider implements HotelIntegrationProvider {
-  name = 'MockHotelProvider';
-
-  async isAvailable(): Promise<boolean> {
-    return true;
-  }
-
-  async search(criteria: HotelSearchCriteria): Promise<IntegrationResponse<HotelResult[]>> {
-    // Check cache first
-    const cacheKey = {
-      destination: criteria.destination,
-      checkInDate: criteria.checkInDate,
-      checkOutDate: criteria.checkOutDate,
-      numberOfNights: criteria.numberOfNights,
-    };
-    const cached = cacheService.get<HotelResult[]>('hotels', cacheKey);
-
-    if (cached) {
-      return {
-        data: cached,
-        provider: this.name,
-        status: IntegrationStatus.MOCK,
-        cached: true,
-        timestamp: new Date(),
-      };
-    }
-
-    // Get destination data (falls back to dynamic generation for unknown cities)
-    const destData = getOrGenerateDestination(criteria.destination);
-    console.log(`[MockHotelProvider] Using ${getDestination(criteria.destination) ? 'static' : 'dynamic'} data for ${criteria.destination}`);
-
-    // Convert mock hotels to integration format
-    const results: HotelResult[] = destData.hotels
-      .map((hotel) => this.transformMockHotel(hotel, criteria))
-      .filter((hotel) => {
-        // Filter by max price if specified
-        if (criteria.maxPrice && hotel.priceTotal > criteria.maxPrice) {
-          return false;
-        }
-        // Filter by min rating if specified
-        if (criteria.minRating && hotel.rating !== null && hotel.rating < criteria.minRating) {
-          return false;
-        }
-        return true;
-      })
-      .slice(0, criteria.maxResults ?? 10);
-
-    // Cache the results
-    cacheService.set('hotels', cacheKey, results);
-
-    return {
-      data: results,
-      provider: this.name,
-      status: IntegrationStatus.MOCK,
-      cached: false,
-      timestamp: new Date(),
-    };
-  }
-
-  /**
-   * Transform mock hotel data to integration format
-   */
-  private transformMockHotel(mockHotel: MockHotel, criteria: HotelSearchCriteria): HotelResult {
-    const priceTotal = mockHotel.pricePerNight * criteria.numberOfNights;
-
-    // Generate random review count based on rating
-    const reviewCount = mockHotel.rating
-      ? Math.floor(Math.random() * 1000) + (mockHotel.rating * 200)
-      : undefined;
-
-    // Generate random amenities
-    const amenitiesList = [
-      'Free WiFi',
-      'Air Conditioning',
-      'Breakfast Included',
-      'Gym',
-      'Pool',
-      'Parking',
-      'Room Service',
-      'Bar/Lounge',
-      'Spa',
-      'Restaurant',
-    ];
-    const numAmenities = Math.floor(Math.random() * 5) + 3; // 3-7 amenities
-    const amenities = amenitiesList
-      .sort(() => Math.random() - 0.5)
-      .slice(0, numAmenities);
-
-    return {
-      id: uuidv4(),
-      name: mockHotel.name,
-      priceTotal,
-      pricePerNight: mockHotel.pricePerNight,
-      rating: mockHotel.rating,
-      reviewCount,
-      amenities,
-      deepLink: `https://hotels.example.com/${criteria.destination}/${mockHotel.name.replace(/\s/g, '-').toLowerCase()}`,
-    };
-  }
-}
-
-// =============================================================================
 // HOTEL INTEGRATION SERVICE
 // =============================================================================
 
@@ -368,37 +256,47 @@ class MockHotelProvider implements HotelIntegrationProvider {
  */
 class HotelIntegrationService {
   private providers: HotelIntegrationProvider[];
-  private currentProvider: HotelIntegrationProvider;
+  private currentProvider: HotelIntegrationProvider | null;
 
   constructor() {
     this.providers = [];
 
-    // Add RapidAPI provider if credentials are available and not in mock mode
-    if (!MOCK_HOTELS && RAPIDAPI_KEY && RAPIDAPI_HOST) {
+    // Add RapidAPI provider if credentials are available
+    if (RAPIDAPI_KEY && RAPIDAPI_HOST) {
       const rapidApiProvider = new RapidAPIHotelProvider(RAPIDAPI_KEY, RAPIDAPI_HOST);
       this.providers.push(rapidApiProvider);
       console.log('[Hotels] Using RapidAPI (Booking.com) provider');
+    } else {
+      console.warn('[Hotels] No hotel provider configured — set RAPIDAPI_KEY to enable hotel search');
     }
-
-    // Always add mock provider as fallback
-    this.providers.push(new MockHotelProvider());
 
     // Set current provider to the first available one
-    this.currentProvider = this.providers[0];
-
-    if (MOCK_HOTELS) {
-      console.log('[Hotels] Using Mock provider (MOCK_HOTELS=true)');
-    }
+    this.currentProvider = this.providers.length > 0 ? this.providers[0] : null;
   }
 
   /**
    * Search for hotels using current provider with fallback
    */
   async search(criteria: HotelSearchCriteria): Promise<IntegrationResponse<HotelResult[]>> {
+    if (!this.currentProvider) {
+      return {
+        data: [],
+        provider: 'none',
+        status: IntegrationStatus.ERROR,
+        cached: false,
+        timestamp: new Date(),
+        error: 'No hotel provider configured. Set RAPIDAPI_KEY to enable hotel search.',
+      };
+    }
+
     // Try current provider first
     if (await this.currentProvider.isAvailable()) {
       try {
-        return await this.currentProvider.search(criteria);
+        const response = await this.currentProvider.search(criteria);
+        if (response.data.length > 0) {
+          return response;
+        }
+        console.log(`[Hotels] ${this.currentProvider.name} returned 0 results, trying fallback...`);
       } catch (error) {
         console.error(`Hotel provider ${this.currentProvider.name} failed:`, error);
       }
@@ -412,22 +310,23 @@ class HotelIntegrationService {
         try {
           console.log(`Falling back to hotel provider: ${provider.name}`);
           const response = await provider.search(criteria);
-          this.currentProvider = provider; // Switch to working provider
-          return response;
+          if (response.data.length > 0) {
+            return response;
+          }
         } catch (error) {
           console.error(`Hotel provider ${provider.name} failed:`, error);
         }
       }
     }
 
-    // All providers failed
+    // All providers returned empty or failed
     return {
       data: [],
       provider: 'none',
       status: IntegrationStatus.ERROR,
       cached: false,
       timestamp: new Date(),
-      error: 'All hotel providers unavailable',
+      error: 'All hotel providers returned no results',
     };
   }
 
@@ -435,7 +334,7 @@ class HotelIntegrationService {
    * Get current provider name
    */
   getProviderName(): string {
-    return this.currentProvider.name;
+    return this.currentProvider?.name || 'none';
   }
 
   /**
@@ -443,6 +342,9 @@ class HotelIntegrationService {
    */
   addProvider(provider: HotelIntegrationProvider): void {
     this.providers.push(provider);
+    if (!this.currentProvider) {
+      this.currentProvider = provider;
+    }
   }
 }
 

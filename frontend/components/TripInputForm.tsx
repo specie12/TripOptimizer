@@ -28,6 +28,9 @@ export default function TripInputForm({ initialValues }: TripInputFormProps) {
     if (!formData.originCity.trim()) {
       newErrors.originCity = 'Please enter your origin city';
     }
+    if (!formData.destination?.trim()) {
+      newErrors.destination = 'Please enter a destination';
+    }
     if (formData.numberOfDays < 1 || formData.numberOfDays > 30) {
       newErrors.numberOfDays = 'Trip length must be between 1 and 30 days';
     }
@@ -90,7 +93,7 @@ export default function TripInputForm({ initialValues }: TripInputFormProps) {
           htmlFor="destination"
           className="block text-sm font-medium text-gray-700 mb-1"
         >
-          Where do you want to go? <span className="text-gray-400 font-normal">(optional)</span>
+          Where do you want to go? <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -99,9 +102,12 @@ export default function TripInputForm({ initialValues }: TripInputFormProps) {
           onChange={(e) =>
             setFormData({ ...formData, destination: e.target.value })
           }
-          placeholder="e.g., Paris (leave blank for suggestions)"
+          placeholder="e.g., Paris"
           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg bg-white text-gray-900"
         />
+        {errors.destination && (
+          <p className="mt-1 text-sm text-red-600">{errors.destination}</p>
+        )}
       </div>
 
       {/* Travel Date */}

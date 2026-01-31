@@ -118,10 +118,11 @@ export function FormProvider({ children }: { children: ReactNode }) {
   const isStepValid = (step: number): boolean => {
     switch (step) {
       case 1:
-        // Budget Basics: budget >= $100, origin city required, days 1-30
+        // Budget Basics: budget >= $100, origin city required, destination required, days 1-30
         return (
           formData.budgetTotal >= 100 &&
           formData.originCity.trim().length > 0 &&
+          (formData.destination?.trim().length ?? 0) > 0 &&
           formData.numberOfDays >= 1 &&
           formData.numberOfDays <= 30
         );

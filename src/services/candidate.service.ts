@@ -8,7 +8,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { TripOptionCandidate } from '../scoring';
 import { BudgetAllocation, GenerateTripRequest } from '../types/api.types';
-import { getAvailableDestinations } from '../config/destinations';
 import { flightIntegration } from '../integrations/flight.integration';
 import { hotelIntegration } from '../integrations/hotel.integration';
 import { FlightResult, HotelResult } from '../types/integration.types';
@@ -56,10 +55,12 @@ export async function generateCandidates(
 ): Promise<GeneratedCandidate[]> {
   const candidates: GeneratedCandidate[] = [];
 
-  // Determine which destinations to consider
-  const destinationsToCheck = request.destination
-    ? [request.destination]
-    : getAvailableDestinations();
+  // Destination is required — no mock destination suggestions
+  if (!request.destination) {
+    console.warn('[CandidateService] No destination provided — returning empty candidates');
+    return candidates;
+  }
+  const destinationsToCheck = [request.destination];
 
   // Calculate dates
   const startDate = request.startDate

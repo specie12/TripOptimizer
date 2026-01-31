@@ -81,14 +81,14 @@ export default function BudgetBasicsStep() {
           {/* Destination */}
           <div>
             <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-2">
-              Destination <span className="text-gray-400 text-xs">(Optional)</span>
+              Destination <span className="text-red-500">*</span>
             </label>
             <CityAutocomplete
               id="destination"
               value={formData.destination || ''}
               onChange={(val) => updateFormData({ destination: val })}
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:border-purple-500 transition-colors"
-              placeholder="Leave blank for suggestions"
+              placeholder="e.g., Paris"
             />
           </div>
 
