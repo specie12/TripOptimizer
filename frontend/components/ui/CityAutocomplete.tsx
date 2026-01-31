@@ -28,6 +28,29 @@ export default function CityAutocomplete({
 
   const showDropdown = isOpen && (suggestions.length > 0 || isLoading || (value.trim().length >= 2 && !isLoading && suggestions.length === 0));
 
+  // Resolve ISO country codes to full names
+  const countryNames = useRef(
+    typeof window !== 'undefined'
+      ? new Intl.DisplayNames(['en'], { type: 'region' })
+      : null
+  );
+
+  function formatCountry(code: string): string {
+    if (!code) return '';
+    try {
+      return countryNames.current?.of(code) || code;
+    } catch {
+      return code;
+    }
+  }
+
+  // Title-case city names from Amadeus (returned in ALL CAPS)
+  function titleCase(str: string): string {
+    return str
+      .toLowerCase()
+      .replace(/(?:^|\s|-)\S/g, (match) => match.toUpperCase());
+  }
+
   // Debounced API search
   const fetchSuggestions = useCallback((query: string) => {
     if (debounceRef.current) {
@@ -62,7 +85,7 @@ export default function CityAutocomplete({
   }, []);
 
   const selectCity = useCallback((city: CitySearchResult) => {
-    onChange(city.name);
+    onChange(titleCase(city.name));
     setIsOpen(false);
     setHighlightedIndex(-1);
     setSuggestions([]);
@@ -214,11 +237,11 @@ export default function CityAutocomplete({
               </svg>
               <div className="min-w-0">
                 <div>
-                  {highlightMatch(city.name)}{' '}
+                  {highlightMatch(titleCase(city.name))}{' '}
                   <span className="text-gray-400">({city.iataCode})</span>
                 </div>
                 {city.country && (
-                  <div className="text-xs text-gray-400">{city.country}</div>
+                  <div className="text-xs text-gray-400">{formatCountry(city.country)}</div>
                 )}
               </div>
             </li>
