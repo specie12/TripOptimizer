@@ -121,7 +121,7 @@ export async function processMessage(
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-3-5-sonnet-20241022',
       max_tokens: 1024,
       system: SYSTEM_PROMPT,
       tools: [EXTRACT_TOOL],
@@ -173,7 +173,9 @@ export async function processMessage(
 
     return { reply, status: 'gathering' };
   } catch (error) {
-    console.error('Chat service Claude API error:', error);
+    const errMsg = error instanceof Error ? error.message : String(error);
+    const errStatus = (error as { status?: number })?.status;
+    console.error(`Chat service Claude API error [status=${errStatus}]: ${errMsg}`);
     return {
       reply: 'I\'m sorry, I encountered an issue. Could you try rephrasing your message?',
       status: 'gathering',
