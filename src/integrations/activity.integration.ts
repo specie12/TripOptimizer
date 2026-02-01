@@ -6,6 +6,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
+import { ActivityCategory } from '@prisma/client';
 import {
   ActivityIntegrationProvider,
   ActivitySearchCriteria,
@@ -13,8 +14,115 @@ import {
   IntegrationResponse,
   IntegrationStatus,
 } from '../types/integration.types';
-import { MOCK_ACTIVITIES, ActivityCandidate } from '../config/activities.config';
+import { getOrGenerateActivities, ActivityCandidate } from '../config/activities.config';
 import { cacheService } from '../services/cache.service';
+import { getCityGeoCode, searchActivities } from './amadeus.integration';
+
+// =============================================================================
+// AMADEUS ACTIVITY PROVIDER
+// =============================================================================
+
+/**
+ * Map Amadeus activity to our ActivityCategory enum using keyword matching.
+ */
+function mapAmadeusCategory(activity: any): ActivityCategory {
+  const text = `${activity.name || ''} ${activity.shortDescription || ''} ${activity.description || ''}`.toLowerCase();
+
+  if (/museum|gallery|monument|landmark|cathedral|palace/.test(text)) return ActivityCategory.ATTRACTION;
+  if (/food|cuisine|tasting|culinary|cooking|gastronom/.test(text)) return ActivityCategory.EXPERIENCE;
+  if (/hike|hiking|adventure|kayak|surf|climb|rafting|diving|snorkel|outdoor/.test(text)) return ActivityCategory.ADVENTURE;
+  if (/show|concert|theater|theatre|performance|nightlife|cabaret/.test(text)) return ActivityCategory.ENTERTAINMENT;
+  if (/transfer|airport|shuttle|transport/.test(text)) return ActivityCategory.TRANSPORT;
+
+  return ActivityCategory.TOUR;
+}
+
+/**
+ * Real activity provider using Amadeus Tours & Activities API
+ */
+class AmadeusActivityProvider implements ActivityIntegrationProvider {
+  name = 'AmadeusActivities';
+
+  async isAvailable(): Promise<boolean> {
+    return !!process.env.AMADEUS_API_KEY;
+  }
+
+  async search(criteria: ActivitySearchCriteria): Promise<IntegrationResponse<ActivityResult[]>> {
+    // Check cache first
+    const cacheKey = { provider: this.name, destination: criteria.destination };
+    const cached = cacheService.get<ActivityResult[]>('activities', cacheKey);
+    if (cached) {
+      return {
+        data: cached,
+        provider: this.name,
+        status: IntegrationStatus.AVAILABLE,
+        cached: true,
+        timestamp: new Date(),
+      };
+    }
+
+    // 1. Resolve city → coordinates
+    const geo = await getCityGeoCode(criteria.destination);
+    if (!geo) {
+      throw new Error(`Could not resolve geoCode for ${criteria.destination}`);
+    }
+
+    // 2. Search activities at those coordinates
+    const rawActivities = await searchActivities(geo.latitude, geo.longitude);
+
+    if (!rawActivities || rawActivities.length === 0) {
+      throw new Error(`No Amadeus activities found near ${criteria.destination}`);
+    }
+
+    // 3. Transform to our ActivityResult format
+    const now = new Date();
+    const availableFrom = now.toISOString();
+    const availableTo = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString();
+
+    let results: ActivityResult[] = rawActivities.map((activity: any) => {
+      const priceAmount = activity.price?.amount ? parseFloat(activity.price.amount) : 0;
+
+      return {
+        id: activity.id || uuidv4(),
+        name: activity.name || 'Unnamed Activity',
+        category: mapAmadeusCategory(activity),
+        description: activity.shortDescription || activity.description || '',
+        duration: activity.duration ? parseInt(activity.duration, 10) : 120,
+        price: Math.round(priceAmount * 100), // dollars → cents
+        rating: activity.rating ? parseFloat(activity.rating) : null,
+        reviewCount: activity.reviews?.totalReviews || 0,
+        deepLink: activity.bookingLink || activity.self?.href || '',
+        imageUrl: activity.pictures?.[0]?.url || null,
+        availableFrom,
+        availableTo,
+      };
+    });
+
+    // 4. Apply criteria filters
+    results = results.filter((r) => {
+      if (criteria.maxPrice && r.price > criteria.maxPrice) return false;
+      if (criteria.categories && criteria.categories.length > 0 && !criteria.categories.includes(r.category)) return false;
+      if (criteria.minRating && r.rating != null && r.rating < criteria.minRating) return false;
+      if (criteria.maxDuration && r.duration > criteria.maxDuration) return false;
+      return true;
+    });
+
+    results = results.slice(0, criteria.maxResults ?? 20);
+
+    // Cache results
+    cacheService.set('activities', cacheKey, results);
+
+    console.log(`[AmadeusActivities] Returning ${results.length} activities for ${criteria.destination}`);
+
+    return {
+      data: results,
+      provider: this.name,
+      status: IntegrationStatus.AVAILABLE,
+      cached: false,
+      timestamp: new Date(),
+    };
+  }
+}
 
 // =============================================================================
 // MOCK ACTIVITY PROVIDER
@@ -49,19 +157,8 @@ class MockActivityProvider implements ActivityIntegrationProvider {
       };
     }
 
-    // Get activities for destination
-    const activities = MOCK_ACTIVITIES[criteria.destination] || [];
-
-    if (activities.length === 0) {
-      return {
-        data: [],
-        provider: this.name,
-        status: IntegrationStatus.MOCK,
-        cached: false,
-        timestamp: new Date(),
-        error: `No activities found for destination ${criteria.destination}`,
-      };
-    }
+    // Get activities for destination (always returns data via dynamic generation)
+    const activities = getOrGenerateActivities(criteria.destination);
 
     // Convert mock activities to integration format
     const results: ActivityResult[] = activities
@@ -143,9 +240,10 @@ class ActivityIntegrationService {
   private currentProvider: ActivityIntegrationProvider;
 
   constructor() {
-    // Initialize with mock provider
-    // In production, add real providers here (Viator, GetYourGuide, etc.)
-    this.providers = [new MockActivityProvider()];
+    this.providers = [
+      new AmadeusActivityProvider(), // try real API first
+      new MockActivityProvider(),     // fallback
+    ];
     this.currentProvider = this.providers[0];
   }
 

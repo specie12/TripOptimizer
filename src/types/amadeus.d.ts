@@ -28,6 +28,12 @@ declare module 'amadeus' {
           post(params: any): Promise<any>;
         };
       };
+      activities: {
+        get(params: { latitude: number; longitude: number; radius?: number }): Promise<any>;
+      };
+      activity(activityId: string): {
+        get(): Promise<any>;
+      };
     };
 
     booking: {

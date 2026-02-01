@@ -280,6 +280,86 @@ export async function searchCities(keyword: string): Promise<
   }));
 }
 
+// =============================================================================
+// GEO & ACTIVITIES
+// =============================================================================
+
+/** Cache city → geoCode to avoid repeat lookups */
+const geoCodeCache = new Map<string, { latitude: number; longitude: number }>();
+
+/**
+ * Resolve a city name to geographic coordinates via Amadeus Location API.
+ * Returns { latitude, longitude } or null if not found.
+ */
+export async function getCityGeoCode(
+  cityName: string
+): Promise<{ latitude: number; longitude: number } | null> {
+  if (!amadeus) {
+    throw new Error('Amadeus not configured — set AMADEUS_API_KEY and AMADEUS_API_SECRET');
+  }
+
+  const cacheKey = cityName.toLowerCase().trim();
+  if (geoCodeCache.has(cacheKey)) {
+    return geoCodeCache.get(cacheKey)!;
+  }
+
+  try {
+    const response = await amadeus.referenceData.locations.get({
+      keyword: cityName,
+      subType: 'CITY',
+    });
+
+    if (response.data && response.data.length > 0) {
+      const city = response.data.find((loc: any) => loc.geoCode) || response.data[0];
+      if (city?.geoCode) {
+        const geo = {
+          latitude: city.geoCode.latitude,
+          longitude: city.geoCode.longitude,
+        };
+        geoCodeCache.set(cacheKey, geo);
+        console.log(`[Amadeus] GeoCode for ${cityName}: ${geo.latitude}, ${geo.longitude}`);
+        return geo;
+      }
+    }
+
+    console.warn(`[Amadeus] No geoCode found for city: ${cityName}`);
+    return null;
+  } catch (error: any) {
+    console.error(`[Amadeus] GeoCode lookup error for ${cityName}:`, error.message);
+    return null;
+  }
+}
+
+/**
+ * Search activities near a geographic point via Amadeus Tours & Activities API.
+ * Returns the raw response data array.
+ */
+export async function searchActivities(
+  latitude: number,
+  longitude: number,
+  radius = 20
+): Promise<any[]> {
+  if (!amadeus) {
+    throw new Error('Amadeus not configured — set AMADEUS_API_KEY and AMADEUS_API_SECRET');
+  }
+
+  try {
+    console.log(`[Amadeus] Searching activities at ${latitude}, ${longitude} (radius=${radius}km)`);
+    const response = await amadeus.shopping.activities.get({
+      latitude,
+      longitude,
+      radius,
+    });
+
+    const activities = response.data || [];
+    console.log(`[Amadeus] Found ${activities.length} activities`);
+    return activities;
+  } catch (error: any) {
+    console.error('[Amadeus] Activities search error:', error.response?.data || error.message);
+    throw error;
+  }
+}
+
 /**
  * Get flight booking details
  */
