@@ -6,6 +6,7 @@ import {
   GenerateTripRequest,
   GenerateTripResponse,
   ApiErrorResponse,
+  ChatMessageResponse,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
@@ -55,6 +56,29 @@ export async function searchCities(query: string): Promise<CitySearchResult[]> {
 
   if (!response.ok) {
     return [];
+  }
+
+  return response.json();
+}
+
+/**
+ * Send a chat message to the AI trip planning chatbot
+ */
+export async function sendChatMessage(request: {
+  message: string;
+  conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>;
+}): Promise<ChatMessageResponse> {
+  const response = await fetch(`${API_BASE}/chat/message`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json();
+    throw new Error(errorBody.error || 'Failed to send chat message');
   }
 
   return response.json();

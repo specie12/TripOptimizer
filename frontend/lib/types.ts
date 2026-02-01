@@ -114,6 +114,40 @@ export interface ValidationError {
 // FORM/UI TYPES
 // =============================================================================
 
+// =============================================================================
+// CHAT TYPES
+// =============================================================================
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
+
+export interface ChatMessageResponse {
+  reply: string;
+  status: 'gathering' | 'ready';
+  extractedParams?: ExtractedTripParams;
+}
+
+export interface ExtractedTripParams {
+  originCity: string;
+  destination?: string;
+  startDate?: string;
+  numberOfDays: number;
+  budgetTotal: number; // In cents
+  travelStyle: 'BUDGET' | 'MID_RANGE' | 'BALANCED' | 'LUXURY';
+  tripPace?: 'RELAXED' | 'BALANCED' | 'PACKED';
+  accommodationType?: 'HOTELS' | 'AIRBNB' | 'RESORTS' | 'HOSTELS';
+  interests?: string[];
+  numberOfTravelers?: number;
+}
+
+// =============================================================================
+// FORM/UI TYPES
+// =============================================================================
+
 export interface TripFormData {
   originCity: string;
   destination?: string; // Optional - if not provided, system suggests destinations

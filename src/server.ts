@@ -21,6 +21,7 @@ import bookingRoutes from './routes/booking.routes'; // Phase 2: Booking orchest
 import itineraryRoutes from './routes/itinerary.routes'; // Phase 3: Itinerary export
 import tripEditRoutes from './routes/trip-edit.routes'; // Phase 5: Component swap & edit
 import adminRoutes from './routes/admin.routes'; // Phase 4: Admin & monitoring
+import chatRoutes from './routes/chat.routes'; // Chat: AI trip planning chatbot
 import { errorHandler } from './middleware/validation';
 import { logTripGeneration, logApiRequest } from './middleware/request-logger'; // Phase 4: Request logging
 
@@ -39,7 +40,7 @@ const app: Application = express();
 // CORS middleware
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
@@ -65,6 +66,7 @@ app.use('/booking', bookingRoutes); // Phase 2: Booking orchestration
 app.use('/itinerary', itineraryRoutes); // Phase 3: Itinerary export
 app.use('/trip-edit', tripEditRoutes); // Phase 5: Component swap & edit
 app.use('/admin', adminRoutes); // Phase 4: Admin & monitoring
+app.use('/chat', chatRoutes); // Chat: AI trip planning chatbot
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -102,6 +104,8 @@ app.get('/', (req, res) => {
       'GET /trip-edit/:tripOptionId/budget': 'Get budget breakdown (Phase 5)',
       'GET /admin/destinations/support': 'Destination support report (Phase 4)',
       'GET /admin/stats': 'System statistics (Phase 4)',
+      'POST /chat/message': 'AI chat trip planning (Chat)',
+      'GET /chat/health': 'Chat service health check (Chat)',
     },
   });
 });
