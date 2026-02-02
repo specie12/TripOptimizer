@@ -130,11 +130,13 @@ export default function TripDetails({
               <ActivityCard key={activity.id} activity={activity} compact={false} />
             ))}
           </div>
-          <p className="text-xs text-gray-500 mt-4 italic">
-            Total activities cost: {formatCurrency(
-              tripOption.activities.reduce((sum, a) => sum + a.price, 0)
-            )}
-          </p>
+          {tripOption.activities.some(a => a.price) && (
+            <p className="text-xs text-gray-500 mt-4 italic">
+              Total activities cost: {formatCurrency(
+                tripOption.activities.filter(a => a.price).reduce((sum, a) => sum + a.price!, 0)
+              )}
+            </p>
+          )}
         </div>
       )}
 

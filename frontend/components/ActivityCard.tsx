@@ -74,9 +74,20 @@ export default function ActivityCard({ activity, compact = false }: ActivityCard
             </div>
           </div>
           <div className="flex flex-col items-end gap-1">
-            <span className="font-semibold text-green-600 text-sm">
-              {formatCurrency(activity.price)}
-            </span>
+            {activity.price ? (
+              <span className="font-semibold text-green-600 text-sm">
+                {formatCurrency(activity.price)}
+              </span>
+            ) : (
+              <a
+                href={activity.deepLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-blue-600 text-sm hover:underline"
+              >
+                See price
+              </a>
+            )}
             <a
               href={activity.deepLink}
               target="_blank"
@@ -105,8 +116,19 @@ export default function ActivityCard({ activity, compact = false }: ActivityCard
           </div>
         </div>
         <div className="text-right">
-          <div className="text-2xl font-bold text-green-600 mb-1">
-            {formatCurrency(activity.price)}
+          <div className="text-2xl font-bold mb-1">
+            {activity.price ? (
+              <span className="text-green-600">{formatCurrency(activity.price)}</span>
+            ) : (
+              <a
+                href={activity.deepLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline text-base"
+              >
+                View pricing →
+              </a>
+            )}
           </div>
           {activity.rating && (
             <div className="flex items-center gap-1 text-sm text-gray-600">

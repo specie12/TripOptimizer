@@ -26,7 +26,8 @@ export default function WhatIsIncluded({
 }: WhatIsIncludedProps) {
   const flightCost = tripOption.flight.price;
   const hotelCost = tripOption.hotel.priceTotal;
-  const activitiesCost = tripOption.activities?.reduce((sum, a) => sum + a.price, 0) || 0;
+  const pricedActivities = tripOption.activities?.filter(a => a.price) || [];
+  const activitiesCost = pricedActivities.reduce((sum, a) => sum + a.price!, 0);
   const activityCount = tripOption.activities?.length || 0;
 
   // Estimate transport from remaining budget
@@ -52,7 +53,9 @@ export default function WhatIsIncluded({
       title: 'Activities & Tours',
       icon: '🎭',
       color: 'bg-green-100 text-green-800',
-      details: `${activityCount} experiences included`,
+      details: pricedActivities.length === activityCount
+        ? `${activityCount} experiences included`
+        : `${activityCount} experiences (${pricedActivities.length} priced)`,
       price: activitiesCost,
     },
     {

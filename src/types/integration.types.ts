@@ -214,7 +214,7 @@ export interface ActivityResult {
   /** Duration in minutes */
   duration: number;
 
-  /** Price in cents */
+  /** Price in cents (0 when API doesn't provide pricing) */
   price: number;
 
   /** Rating (0-5) */

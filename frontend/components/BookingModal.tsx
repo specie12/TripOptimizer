@@ -504,7 +504,7 @@ export default function BookingModal({ tripOption, isOpen, onClose }: BookingMod
                       <div className="flex justify-between">
                         <span className="text-gray-600">🎭 Activities ({tripOption.activities.length})</span>
                         <span className="font-medium">
-                          {formatCurrency(tripOption.activities.reduce((sum, a) => sum + a.price, 0))}
+                          {formatCurrency(tripOption.activities.filter(a => a.price).reduce((sum, a) => sum + a.price!, 0))}
                         </span>
                       </div>
                     )}

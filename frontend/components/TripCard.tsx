@@ -59,7 +59,7 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
   // Calculate costs for breakdown (use currentTripOption for live updates)
   const flightCost = currentTripOption.flight.price;
   const hotelCost = currentTripOption.hotel.priceTotal;
-  const activitiesCost = currentTripOption.activities?.reduce((sum, a) => sum + a.price, 0) || 0;
+  const activitiesCost = currentTripOption.activities?.filter(a => a.price).reduce((sum, a) => sum + a.price!, 0) || 0;
 
   // Estimate food and transport from remaining budget
   const remainingAfterActivities = currentTripOption.remainingBudget - activitiesCost;
@@ -99,7 +99,7 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
           <span className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             {formatCurrency(currentTripOption.totalCost)}
           </span>
-          <span className="text-gray-600 text-lg">total</span>
+          <span className="text-gray-600 text-lg">flights & hotel</span>
         </div>
       </div>
 
@@ -235,7 +235,7 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
           className="w-full py-4 px-6 bg-gradient-to-r from-green-600 to-green-700 text-white font-bold rounded-xl hover:from-green-700 hover:to-green-800 transition-all shadow-lg mb-4 flex items-center justify-center gap-2"
         >
           <span className="text-lg">🎉</span>
-          <span>Book Complete Trip - {formatCurrency(currentTripOption.totalCost)}</span>
+          <span>Book Flights & Hotel - {formatCurrency(currentTripOption.totalCost)}</span>
         </button>
 
         {/* Secondary Options: Individual Booking */}

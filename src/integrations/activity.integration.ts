@@ -14,7 +14,6 @@ import {
   IntegrationResponse,
   IntegrationStatus,
 } from '../types/integration.types';
-import { getOrGenerateActivities, ActivityCandidate } from '../config/activities.config';
 import { cacheService } from '../services/cache.service';
 import { getCityGeoCode, searchActivities } from './amadeus.integration';
 
@@ -100,7 +99,7 @@ class AmadeusActivityProvider implements ActivityIntegrationProvider {
 
     // 4. Apply criteria filters
     results = results.filter((r) => {
-      if (criteria.maxPrice && r.price > criteria.maxPrice) return false;
+      if (criteria.maxPrice && r.price && r.price > criteria.maxPrice) return false;
       if (criteria.categories && criteria.categories.length > 0 && !criteria.categories.includes(r.category)) return false;
       if (criteria.minRating && r.rating != null && r.rating < criteria.minRating) return false;
       if (criteria.maxDuration && r.duration > criteria.maxDuration) return false;
@@ -125,110 +124,6 @@ class AmadeusActivityProvider implements ActivityIntegrationProvider {
 }
 
 // =============================================================================
-// MOCK ACTIVITY PROVIDER
-// =============================================================================
-
-/**
- * Mock activity provider using static activity data
- */
-class MockActivityProvider implements ActivityIntegrationProvider {
-  name = 'MockActivityProvider';
-
-  async isAvailable(): Promise<boolean> {
-    return true;
-  }
-
-  async search(criteria: ActivitySearchCriteria): Promise<IntegrationResponse<ActivityResult[]>> {
-    // Check cache first
-    const cacheKey = {
-      destination: criteria.destination,
-      categories: criteria.categories,
-      maxPrice: criteria.maxPrice,
-    };
-    const cached = cacheService.get<ActivityResult[]>('activities', cacheKey);
-
-    if (cached) {
-      return {
-        data: cached,
-        provider: this.name,
-        status: IntegrationStatus.MOCK,
-        cached: true,
-        timestamp: new Date(),
-      };
-    }
-
-    // Get activities for destination (always returns data via dynamic generation)
-    const activities = getOrGenerateActivities(criteria.destination);
-
-    // Convert mock activities to integration format
-    const results: ActivityResult[] = activities
-      .map((activity) => this.transformMockActivity(activity, criteria.destination))
-      .filter((activity) => {
-        // Filter by categories if specified
-        if (criteria.categories && criteria.categories.length > 0) {
-          if (!criteria.categories.includes(activity.category)) {
-            return false;
-          }
-        }
-        // Filter by max price if specified
-        if (criteria.maxPrice && activity.price > criteria.maxPrice) {
-          return false;
-        }
-        // Filter by min rating if specified
-        if (criteria.minRating && activity.rating !== undefined && activity.rating !== null && activity.rating < criteria.minRating) {
-          return false;
-        }
-        // Filter by max duration if specified
-        if (criteria.maxDuration && activity.duration > criteria.maxDuration) {
-          return false;
-        }
-        return true;
-      })
-      .slice(0, criteria.maxResults ?? 20);
-
-    // Cache the results
-    cacheService.set('activities', cacheKey, results);
-
-    return {
-      data: results,
-      provider: this.name,
-      status: IntegrationStatus.MOCK,
-      cached: false,
-      timestamp: new Date(),
-    };
-  }
-
-  /**
-   * Transform mock activity data to integration format
-   */
-  private transformMockActivity(
-    mockActivity: ActivityCandidate,
-    destination: string
-  ): ActivityResult {
-    // Generate availability window (next 90 days)
-    const now = new Date();
-    const availableFrom = new Date(now);
-    const availableTo = new Date(now);
-    availableTo.setDate(availableTo.getDate() + 90);
-
-    return {
-      id: uuidv4(),
-      name: mockActivity.name,
-      category: mockActivity.category,
-      description: mockActivity.description,
-      duration: mockActivity.duration,
-      price: mockActivity.price,
-      rating: mockActivity.rating || null,
-      reviewCount: mockActivity.reviewCount,
-      deepLink: mockActivity.deepLink,
-      imageUrl: mockActivity.imageUrl,
-      availableFrom: availableFrom.toISOString(),
-      availableTo: availableTo.toISOString(),
-    };
-  }
-}
-
-// =============================================================================
 // ACTIVITY INTEGRATION SERVICE
 // =============================================================================
 
@@ -241,8 +136,7 @@ class ActivityIntegrationService {
 
   constructor() {
     this.providers = [
-      new AmadeusActivityProvider(), // try real API first
-      new MockActivityProvider(),     // fallback
+      new AmadeusActivityProvider(),
     ];
     this.currentProvider = this.providers[0];
   }
@@ -310,8 +204,6 @@ export const activityIntegration = new ActivityIntegrationService();
 // =============================================================================
 
 import { ActivityBookingConfirmation } from '../types/booking.types';
-
-const MOCK_ACTIVITIES_BOOKING = process.env.MOCK_ACTIVITIES === 'true';
 
 /**
  * Book an activity

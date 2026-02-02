@@ -88,7 +88,7 @@ export interface ActivityResponse {
   category: string;
   description: string;
   duration: number; // In minutes
-  price: number; // In cents
+  price?: number | null; // In cents — may be absent for activities without pricing
   rating?: number | null;
   deepLink: string;
   imageUrl?: string | null;
