@@ -15,6 +15,7 @@ import { useState } from 'react';
 import { TripOptionResponse } from '@/lib/types';
 import { formatCurrency } from '@/lib/formatters';
 import { trackExpandExplanation, trackViewDetails } from '@/lib/tracking';
+import Link from 'next/link';
 import WhyThisWorks from './WhyThisWorks';
 import TripDetails from './TripDetails';
 import AffiliateDisclosure from './monetization/AffiliateDisclosure';
@@ -63,14 +64,21 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
 
   // Use backend-computed budget allocations for food and transport
   const estimatedFood = currentTripOption.foodBudget;
-  const estimatedTransport = currentTripOption.transportBudget;
+  const estimatedTransport = currentTripOption.transportBudget ?? 0;
+
+  // Transport range from backend estimate
+  const transportEstimate = currentTripOption.transportEstimate;
+  const transportRangeLabel = transportEstimate
+    ? `${formatCurrency(transportEstimate.costRangeLow)}–${formatCurrency(transportEstimate.costRangeHigh)}`
+    : formatCurrency(estimatedTransport);
+  const transportDestSlug = encodeURIComponent(currentTripOption.destination.toLowerCase());
 
   const costBreakdown = [
-    { category: 'Flights', amount: flightCost, icon: '✈️', color: 'bg-blue-500' },
-    { category: 'Hotels', amount: hotelCost, icon: '🏨', color: 'bg-purple-500' },
-    { category: 'Activities', amount: activitiesCost, icon: '🎭', color: 'bg-green-500' },
-    { category: 'Food', amount: estimatedFood, icon: '🍽️', color: 'bg-orange-500' },
-    { category: 'Transport', amount: estimatedTransport, icon: '🚗', color: 'bg-yellow-500' },
+    { category: 'Flights', amount: flightCost, icon: '✈️', color: 'bg-blue-500', isTransport: false },
+    { category: 'Hotels', amount: hotelCost, icon: '🏨', color: 'bg-purple-500', isTransport: false },
+    { category: 'Activities', amount: activitiesCost, icon: '🎭', color: 'bg-green-500', isTransport: false },
+    { category: 'Food', amount: estimatedFood, icon: '🍽️', color: 'bg-orange-500', isTransport: false },
+    { category: 'Transport', amount: estimatedTransport, icon: '🚗', color: 'bg-yellow-500', isTransport: true },
   ];
 
   return (
@@ -110,17 +118,32 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
         </h4>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {costBreakdown.map((item) => (
-            <div
-              key={item.category}
-              className="bg-gray-50 rounded-lg p-4 text-center border-l-4"
-              style={{ borderLeftColor: item.color.replace('bg-', '#') }}
-            >
-              <div className="text-2xl mb-1">{item.icon}</div>
-              <div className="text-xs text-gray-600 mb-1">{item.category}</div>
-              <div className="font-bold text-gray-900 text-sm">
-                {formatCurrency(item.amount)}
+            item.isTransport ? (
+              <Link
+                key={item.category}
+                href={`/transport/${transportDestSlug}?budget=${estimatedTransport}`}
+                className="bg-gray-50 rounded-lg p-4 text-center border-l-4 hover:bg-yellow-50 transition-colors cursor-pointer block"
+                style={{ borderLeftColor: item.color.replace('bg-', '#') }}
+              >
+                <div className="text-2xl mb-1">{item.icon}</div>
+                <div className="text-xs text-gray-600 mb-1">{item.category}</div>
+                <div className="font-bold text-purple-700 text-sm underline">
+                  {transportRangeLabel}
+                </div>
+              </Link>
+            ) : (
+              <div
+                key={item.category}
+                className="bg-gray-50 rounded-lg p-4 text-center border-l-4"
+                style={{ borderLeftColor: item.color.replace('bg-', '#') }}
+              >
+                <div className="text-2xl mb-1">{item.icon}</div>
+                <div className="text-xs text-gray-600 mb-1">{item.category}</div>
+                <div className="font-bold text-gray-900 text-sm">
+                  {formatCurrency(item.amount)}
+                </div>
               </div>
-            </div>
+            )
           ))}
         </div>
       </div>

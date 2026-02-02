@@ -39,6 +39,7 @@ import {
   generateScoreBreakdown,
   calculateMatchPercentage,
 } from '../services/trip-description.service';
+import { getTransportCostRange, getCityTransportInfo } from '../services/transport.service';
 
 const prisma = new PrismaClient();
 
@@ -381,6 +382,9 @@ router.post(
             option.score
           );
 
+          // Compute transport cost range for this destination
+          const transportRange = getTransportCostRange(option.destination, requestBody.numberOfDays);
+
           return {
             id: option.id,
             destination: option.destination,
@@ -395,6 +399,11 @@ router.post(
             scoreBreakdown,
             explanation: option.explanation,
             itinerary: scoredTrip.itinerary,
+            transportEstimate: {
+              costRangeLow: transportRange.costRangeLow,
+              costRangeHigh: transportRange.costRangeHigh,
+              isEstimate: transportRange.isEstimate,
+            },
             flight: {
               provider: option.flightOption!.provider,
               price: option.flightOption!.price,
@@ -466,6 +475,32 @@ router.get('/city-search', async (req: Request, res: Response): Promise<void> =>
     console.error('[city-search] Error:', error);
     res.json([]);
   }
+});
+
+/**
+ * GET /trip/transport/:destination
+ *
+ * Returns full transport data for a destination city.
+ * Query params: ?days=N (default 5)
+ */
+router.get('/transport/:destination', (req: Request, res: Response) => {
+  const destination = decodeURIComponent(req.params.destination);
+  const days = Math.max(1, Math.min(30, parseInt(req.query.days as string, 10) || 5));
+
+  const info = getCityTransportInfo(destination, days);
+
+  res.json({
+    cityName: info.cityName,
+    days,
+    costRangeLow: info.range.costRangeLow,
+    costRangeHigh: info.range.costRangeHigh,
+    isEstimate: info.range.isEstimate,
+    transitPassName: info.range.cityData.transitPassName,
+    links: info.range.cityData.links,
+    tips: info.range.cityData.tips,
+    dailyCostRange: info.range.cityData.dailyCostRange,
+    airportTransferRange: info.range.cityData.airportTransferRange,
+  });
 });
 
 /**

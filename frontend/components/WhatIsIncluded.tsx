@@ -12,6 +12,7 @@
  * Bottom CTA for booking
  */
 
+import Link from 'next/link';
 import { TripOptionResponse } from '@/lib/types';
 import { formatCurrency } from '@/lib/formatters';
 
@@ -31,7 +32,9 @@ export default function WhatIsIncluded({
   const activityCount = tripOption.activities?.length || 0;
 
   // Use backend-computed budget allocation for transport
-  const estimatedTransport = tripOption.transportBudget;
+  const estimatedTransport = tripOption.transportBudget ?? 0;
+  const transportEstimate = tripOption.transportEstimate;
+  const transportDestSlug = encodeURIComponent(tripOption.destination.toLowerCase());
 
   const inclusions = [
     {
@@ -40,6 +43,7 @@ export default function WhatIsIncluded({
       color: 'bg-blue-100 text-blue-800',
       details: `Economy class • ${tripOption.flight.provider}`,
       price: flightCost,
+      isTransport: false,
     },
     {
       title: 'Accommodation',
@@ -47,6 +51,7 @@ export default function WhatIsIncluded({
       color: 'bg-purple-100 text-purple-800',
       details: `${numberOfDays} nights • ${tripOption.hotel.name}`,
       price: hotelCost,
+      isTransport: false,
     },
     {
       title: 'Activities & Tours',
@@ -56,13 +61,17 @@ export default function WhatIsIncluded({
         ? `${activityCount} experiences included`
         : `${activityCount} experiences (${pricedActivities.length} priced)`,
       price: activitiesCost,
+      isTransport: false,
     },
     {
       title: 'Local Transportation',
       icon: '🚗',
       color: 'bg-yellow-100 text-yellow-800',
-      details: 'Metro & bus passes',
+      details: transportEstimate
+        ? (transportEstimate.isEstimate ? 'Estimated transit costs' : 'City transit passes & transfers')
+        : 'Metro & bus passes',
       price: estimatedTransport,
+      isTransport: true,
     },
   ];
 
@@ -74,25 +83,44 @@ export default function WhatIsIncluded({
       </h3>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        {inclusions.map((item, index) => (
-          <div
-            key={index}
-            className={`${item.color} rounded-xl p-5`}
-          >
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex items-center gap-3">
-                <span className="text-3xl">{item.icon}</span>
-                <div>
-                  <h4 className="font-semibold text-base">{item.title}</h4>
-                  <p className="text-sm opacity-80">{item.details}</p>
+        {inclusions.map((item, index) => {
+          const content = (
+            <>
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{item.icon}</span>
+                  <div>
+                    <h4 className="font-semibold text-base">{item.title}</h4>
+                    <p className="text-sm opacity-80">{item.details}</p>
+                  </div>
                 </div>
               </div>
+              <p className={`text-right font-bold text-lg mt-2 ${item.isTransport && transportEstimate ? 'underline' : ''}`}>
+                {item.isTransport && transportEstimate
+                  ? `${formatCurrency(transportEstimate.costRangeLow)}–${formatCurrency(transportEstimate.costRangeHigh)}`
+                  : formatCurrency(item.price)}
+              </p>
+            </>
+          );
+
+          if (item.isTransport) {
+            return (
+              <Link
+                key={index}
+                href={`/transport/${transportDestSlug}?budget=${estimatedTransport}`}
+                className={`${item.color} rounded-xl p-5 hover:opacity-90 transition-opacity block`}
+              >
+                {content}
+              </Link>
+            );
+          }
+
+          return (
+            <div key={index} className={`${item.color} rounded-xl p-5`}>
+              {content}
             </div>
-            <p className="text-right font-bold text-lg mt-2">
-              {formatCurrency(item.price)}
-            </p>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Ready to Book Section */}

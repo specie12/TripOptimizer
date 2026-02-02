@@ -53,6 +53,11 @@ export interface TripOptionResponse {
   flight: FlightResponse;
   hotel: HotelResponse;
   activities?: ActivityResponse[]; // Phase 3: Activities
+  transportEstimate?: {
+    costRangeLow: number;
+    costRangeHigh: number;
+    isEstimate: boolean;
+  };
 }
 
 export interface ItineraryDay {

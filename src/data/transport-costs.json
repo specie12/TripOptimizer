@@ -1,0 +1,662 @@
+{
+  "paris": {
+    "dailyCostRange": { "low": 800, "high": 2500 },
+    "airportTransferRange": { "low": 1200, "high": 7000 },
+    "transitPassName": "Navigo Easy / t+ tickets",
+    "links": {
+      "publicTransit": { "label": "Paris Metro (RATP)", "url": "https://www.ratp.fr/en" },
+      "rideHailing": { "label": "Uber Paris", "url": "https://www.uber.com/fr/en/" },
+      "taxi": { "label": "Taxis G7", "url": "https://www.g7.fr/en" },
+      "airportTransfer": { "label": "CDG Shuttle & RER B", "url": "https://www.parisaeroport.fr/en/passengers/access/paris-charles-de-gaulle/public-transport" }
+    },
+    "tips": ["Buy a carnet of 10 t+ tickets for savings", "CDG to city: RER B train ~$12"]
+  },
+  "london": {
+    "dailyCostRange": { "low": 1000, "high": 3000 },
+    "airportTransferRange": { "low": 1500, "high": 8000 },
+    "transitPassName": "Oyster Card / Contactless",
+    "links": {
+      "publicTransit": { "label": "TfL (Transport for London)", "url": "https://tfl.gov.uk" },
+      "rideHailing": { "label": "Uber London", "url": "https://www.uber.com/gb/en/" },
+      "taxi": { "label": "Black Cab (Gett)", "url": "https://gett.com/uk/" },
+      "airportTransfer": { "label": "Heathrow Express", "url": "https://www.heathrowexpress.com" }
+    },
+    "tips": ["Use contactless bank card—same Oyster pricing", "Heathrow Express: 15 min to Paddington ~$27"]
+  },
+  "new york": {
+    "dailyCostRange": { "low": 600, "high": 3500 },
+    "airportTransferRange": { "low": 275, "high": 7500 },
+    "transitPassName": "OMNY / MetroCard",
+    "links": {
+      "publicTransit": { "label": "MTA Subway & Bus", "url": "https://new.mta.info" },
+      "rideHailing": { "label": "Uber NYC", "url": "https://www.uber.com/us/en/" },
+      "taxi": { "label": "NYC Yellow Cab", "url": "https://www.nyc.gov/site/tlc/passengers/taxi-cab-service.page" },
+      "airportTransfer": { "label": "AirTrain JFK + Subway", "url": "https://new.mta.info/airtrain-jfk" }
+    },
+    "tips": ["Subway flat fare $2.90 anywhere in NYC", "JFK AirTrain + subway combo ~$11"]
+  },
+  "tokyo": {
+    "dailyCostRange": { "low": 800, "high": 2000 },
+    "airportTransferRange": { "low": 1000, "high": 5000 },
+    "transitPassName": "Suica / Pasmo IC Card",
+    "links": {
+      "publicTransit": { "label": "Tokyo Metro", "url": "https://www.tokyometro.jp/en/" },
+      "rideHailing": { "label": "Uber / GO Taxi", "url": "https://www.uber.com/jp/en/" },
+      "taxi": { "label": "Japan Taxi", "url": "https://japantaxi.jp" },
+      "airportTransfer": { "label": "Narita Express (N'EX)", "url": "https://www.jreast.co.jp/multi/en/nex/" }
+    },
+    "tips": ["Get a Suica card at any station for tap-and-go", "Narita Express ~$30, Limousine Bus ~$25"]
+  },
+  "rome": {
+    "dailyCostRange": { "low": 600, "high": 2000 },
+    "airportTransferRange": { "low": 800, "high": 5000 },
+    "transitPassName": "Roma Pass / BIT tickets",
+    "links": {
+      "publicTransit": { "label": "ATAC Roma", "url": "https://www.atac.roma.it/en" },
+      "rideHailing": { "label": "Uber Rome", "url": "https://www.uber.com/it/en/" },
+      "taxi": { "label": "Rome Taxis", "url": "https://www.comune.roma.it/web/en/" },
+      "airportTransfer": { "label": "Leonardo Express", "url": "https://www.trenitalia.com/en.html" }
+    },
+    "tips": ["Leonardo Express: Fiumicino to Termini ~$15", "Buy 24h/48h Roma Pass for unlimited transit + museum discounts"]
+  },
+  "barcelona": {
+    "dailyCostRange": { "low": 600, "high": 2000 },
+    "airportTransferRange": { "low": 600, "high": 4500 },
+    "transitPassName": "T-Casual / Hola BCN",
+    "links": {
+      "publicTransit": { "label": "TMB Barcelona", "url": "https://www.tmb.cat/en/home" },
+      "rideHailing": { "label": "Uber / Cabify", "url": "https://www.uber.com/es/en/" },
+      "taxi": { "label": "Barcelona Taxi", "url": "https://taxi.amb.cat/en" },
+      "airportTransfer": { "label": "Aerobus", "url": "https://www.aerobusbcn.com/en" }
+    },
+    "tips": ["Aerobus: airport to Plaça Catalunya ~$7.75", "T-Casual 10-trip card ~$12"]
+  },
+  "amsterdam": {
+    "dailyCostRange": { "low": 700, "high": 2200 },
+    "airportTransferRange": { "low": 500, "high": 5000 },
+    "transitPassName": "OV-chipkaart",
+    "links": {
+      "publicTransit": { "label": "GVB Amsterdam", "url": "https://www.gvb.nl/en" },
+      "rideHailing": { "label": "Uber Amsterdam", "url": "https://www.uber.com/nl/en/" },
+      "taxi": { "label": "TCA Taxi", "url": "https://www.tcataxi.nl/en/" },
+      "airportTransfer": { "label": "Schiphol Train", "url": "https://www.ns.nl/en" }
+    },
+    "tips": ["Train from Schiphol to Centraal ~$5", "Rent a bike—most locals cycle everywhere"]
+  },
+  "berlin": {
+    "dailyCostRange": { "low": 500, "high": 1800 },
+    "airportTransferRange": { "low": 400, "high": 4500 },
+    "transitPassName": "BVG Day Ticket / AB Zone",
+    "links": {
+      "publicTransit": { "label": "BVG Berlin", "url": "https://www.bvg.de/en" },
+      "rideHailing": { "label": "Uber / FREE NOW", "url": "https://www.uber.com/de/en/" },
+      "taxi": { "label": "Taxi Berlin", "url": "https://www.taxi-berlin.de/en" },
+      "airportTransfer": { "label": "BER Airport Express", "url": "https://www.berlin-airport.de/en/travellers/to-and-from/trains/index.php" }
+    },
+    "tips": ["BER to city center by S-Bahn ~$4", "Day ticket AB zone ~$9 for unlimited rides"]
+  },
+  "bangkok": {
+    "dailyCostRange": { "low": 300, "high": 1500 },
+    "airportTransferRange": { "low": 200, "high": 3000 },
+    "transitPassName": "Rabbit Card (BTS) / MRT Token",
+    "links": {
+      "publicTransit": { "label": "BTS Skytrain", "url": "https://www.bts.co.th/eng/" },
+      "rideHailing": { "label": "Grab Thailand", "url": "https://www.grab.com/th/en/" },
+      "taxi": { "label": "Metered Taxi", "url": "https://www.tourismthailand.org" },
+      "airportTransfer": { "label": "Airport Rail Link", "url": "https://www.srtet.co.th/en" }
+    },
+    "tips": ["Airport Rail Link: Suvarnabhumi to city ~$2", "Always use metered taxis or Grab—avoid flat-rate scams"]
+  },
+  "dubai": {
+    "dailyCostRange": { "low": 500, "high": 3000 },
+    "airportTransferRange": { "low": 300, "high": 6000 },
+    "transitPassName": "nol Card",
+    "links": {
+      "publicTransit": { "label": "Dubai Metro (RTA)", "url": "https://www.rta.ae/wps/portal/rta/ae/public-transport/dubai-metro" },
+      "rideHailing": { "label": "Uber / Careem", "url": "https://www.careem.com" },
+      "taxi": { "label": "Dubai Taxi (RTA)", "url": "https://www.rta.ae/wps/portal/rta/ae/public-transport/taxi" },
+      "airportTransfer": { "label": "DXB Metro Red Line", "url": "https://www.rta.ae/wps/portal/rta/ae/public-transport/dubai-metro" }
+    },
+    "tips": ["Metro Red Line goes directly to DXB airport terminals", "nol Silver card ~$7 deposit, fares from $1"]
+  },
+  "singapore": {
+    "dailyCostRange": { "low": 500, "high": 2000 },
+    "airportTransferRange": { "low": 200, "high": 4000 },
+    "transitPassName": "EZ-Link / SimplyGo",
+    "links": {
+      "publicTransit": { "label": "SMRT / SBS Transit", "url": "https://www.smrt.com.sg" },
+      "rideHailing": { "label": "Grab Singapore", "url": "https://www.grab.com/sg/" },
+      "taxi": { "label": "ComfortDelGro Taxi", "url": "https://www.cdgtaxi.com.sg" },
+      "airportTransfer": { "label": "Changi MRT (CG Line)", "url": "https://www.changiairport.com/en/transport/public-transport.html" }
+    },
+    "tips": ["MRT from Changi to city ~$2.50", "Singapore is compact—MRT covers most tourist areas"]
+  },
+  "lisbon": {
+    "dailyCostRange": { "low": 500, "high": 1800 },
+    "airportTransferRange": { "low": 200, "high": 3500 },
+    "transitPassName": "Viva Viagem / Lisboa Card",
+    "links": {
+      "publicTransit": { "label": "Carris / Metro Lisboa", "url": "https://www.metrolisboa.pt/en/" },
+      "rideHailing": { "label": "Uber / Bolt", "url": "https://www.uber.com/pt/en/" },
+      "taxi": { "label": "Lisbon Taxis", "url": "https://www.visitlisboa.com" },
+      "airportTransfer": { "label": "Metro Red Line (Aeroporto)", "url": "https://www.metrolisboa.pt/en/" }
+    },
+    "tips": ["Metro from airport to city center ~$1.65", "Lisboa Card: unlimited transit + free museums"]
+  },
+  "istanbul": {
+    "dailyCostRange": { "low": 300, "high": 1500 },
+    "airportTransferRange": { "low": 200, "high": 4000 },
+    "transitPassName": "Istanbulkart",
+    "links": {
+      "publicTransit": { "label": "IETT Istanbul", "url": "https://www.iett.istanbul/en" },
+      "rideHailing": { "label": "Uber / BiTaksi", "url": "https://www.uber.com/tr/en/" },
+      "taxi": { "label": "Istanbul Taxi", "url": "https://www.ibb.istanbul/en" },
+      "airportTransfer": { "label": "Havaist Airport Bus", "url": "https://hfrwtlhm.com/en/havaist" }
+    },
+    "tips": ["Istanbulkart: rechargeable transit card ~$0.50 per ride", "Havaist bus from IST airport ~$4"]
+  },
+  "cairo": {
+    "dailyCostRange": { "low": 200, "high": 1200 },
+    "airportTransferRange": { "low": 300, "high": 3000 },
+    "transitPassName": "Cairo Metro Tokens",
+    "links": {
+      "publicTransit": { "label": "Cairo Metro", "url": "https://cairometro.gov.eg" },
+      "rideHailing": { "label": "Uber / Careem Cairo", "url": "https://www.uber.com/eg/en/" },
+      "taxi": { "label": "Cairo Taxi", "url": "https://www.egypt.travel" },
+      "airportTransfer": { "label": "Airport Shuttle / Uber", "url": "https://www.cairo-airport.com" }
+    },
+    "tips": ["Cairo Metro token ~$0.30 per ride", "Use Uber/Careem instead of street taxis for metered pricing"]
+  },
+  "cape town": {
+    "dailyCostRange": { "low": 400, "high": 2500 },
+    "airportTransferRange": { "low": 500, "high": 4000 },
+    "transitPassName": "MyCiTi Card",
+    "links": {
+      "publicTransit": { "label": "MyCiTi Bus", "url": "https://www.myciti.org.za" },
+      "rideHailing": { "label": "Uber Cape Town", "url": "https://www.uber.com/za/en/" },
+      "taxi": { "label": "Cape Town Taxis", "url": "https://www.capetown.travel" },
+      "airportTransfer": { "label": "MyCiTi Airport Service", "url": "https://www.myciti.org.za" }
+    },
+    "tips": ["MyCiTi bus from airport ~$7", "Uber is widely used and reliable in Cape Town"]
+  },
+  "sydney": {
+    "dailyCostRange": { "low": 800, "high": 2500 },
+    "airportTransferRange": { "low": 1500, "high": 6000 },
+    "transitPassName": "Opal Card",
+    "links": {
+      "publicTransit": { "label": "Transport NSW", "url": "https://transportnsw.info" },
+      "rideHailing": { "label": "Uber Australia", "url": "https://www.uber.com/au/en/" },
+      "taxi": { "label": "13CABS", "url": "https://www.13cabs.com.au" },
+      "airportTransfer": { "label": "Airport Link Train", "url": "https://www.airportlink.com.au" }
+    },
+    "tips": ["Airport Link train to city ~$19 AUD", "Opal card: Sunday cap at $2.80 AUD for unlimited travel"]
+  },
+  "melbourne": {
+    "dailyCostRange": { "low": 700, "high": 2200 },
+    "airportTransferRange": { "low": 1000, "high": 5000 },
+    "transitPassName": "Myki Card",
+    "links": {
+      "publicTransit": { "label": "PTV Melbourne", "url": "https://www.ptv.vic.gov.au" },
+      "rideHailing": { "label": "Uber Melbourne", "url": "https://www.uber.com/au/en/" },
+      "taxi": { "label": "13CABS Melbourne", "url": "https://www.13cabs.com.au" },
+      "airportTransfer": { "label": "SkyBus", "url": "https://www.skybus.com.au" }
+    },
+    "tips": ["SkyBus: airport to city ~$20 AUD", "Free Tram Zone in CBD—no Myki needed"]
+  },
+  "toronto": {
+    "dailyCostRange": { "low": 600, "high": 2000 },
+    "airportTransferRange": { "low": 300, "high": 5500 },
+    "transitPassName": "PRESTO Card",
+    "links": {
+      "publicTransit": { "label": "TTC Toronto", "url": "https://www.ttc.ca" },
+      "rideHailing": { "label": "Uber Toronto", "url": "https://www.uber.com/ca/en/" },
+      "taxi": { "label": "Beck Taxi", "url": "https://www.becktaxi.com" },
+      "airportTransfer": { "label": "UP Express", "url": "https://www.upexpress.com" }
+    },
+    "tips": ["UP Express: Pearson to Union Station ~$13 CAD", "TTC day pass ~$14 CAD for unlimited rides"]
+  },
+  "montreal": {
+    "dailyCostRange": { "low": 500, "high": 1800 },
+    "airportTransferRange": { "low": 300, "high": 4500 },
+    "transitPassName": "OPUS Card / STM",
+    "links": {
+      "publicTransit": { "label": "STM Montreal", "url": "https://www.stm.info/en" },
+      "rideHailing": { "label": "Uber Montreal", "url": "https://www.uber.com/ca/en/" },
+      "taxi": { "label": "Taxi Diamond", "url": "https://www.taxidiamond.com" },
+      "airportTransfer": { "label": "747 Airport Bus", "url": "https://www.stm.info/en/info/networks/bus/shuttle/line-747-east" }
+    },
+    "tips": ["747 bus: YUL to downtown ~$11 CAD", "OPUS card weekly pass ~$30 CAD for unlimited transit"]
+  },
+  "mexico city": {
+    "dailyCostRange": { "low": 200, "high": 1200 },
+    "airportTransferRange": { "low": 200, "high": 3000 },
+    "transitPassName": "Tarjeta de Movilidad Integrada",
+    "links": {
+      "publicTransit": { "label": "Metro CDMX", "url": "https://www.metro.cdmx.gob.mx" },
+      "rideHailing": { "label": "Uber / DiDi", "url": "https://www.uber.com/mx/en/" },
+      "taxi": { "label": "Sitio Taxi (Airport)", "url": "https://www.aicm.com.mx/en" },
+      "airportTransfer": { "label": "Metrobús Line 4", "url": "https://www.metrobus.cdmx.gob.mx" }
+    },
+    "tips": ["Metro ride ~$0.30—one of the cheapest in the world", "Use authorized Sitio taxis at the airport"]
+  },
+  "buenos aires": {
+    "dailyCostRange": { "low": 200, "high": 1000 },
+    "airportTransferRange": { "low": 300, "high": 3500 },
+    "transitPassName": "SUBE Card",
+    "links": {
+      "publicTransit": { "label": "Buenos Aires Subte", "url": "https://www.buenosaires.gob.ar/subte" },
+      "rideHailing": { "label": "Uber / Cabify", "url": "https://www.uber.com/ar/en/" },
+      "taxi": { "label": "BA Taxi", "url": "https://www.buenosaires.gob.ar" },
+      "airportTransfer": { "label": "Tienda León Shuttle", "url": "https://www.tiendaleon.com" }
+    },
+    "tips": ["SUBE card required for all public transit", "Tienda León bus: EZE to city center ~$15"]
+  },
+  "rio de janeiro": {
+    "dailyCostRange": { "low": 300, "high": 1500 },
+    "airportTransferRange": { "low": 500, "high": 4000 },
+    "transitPassName": "RioCard",
+    "links": {
+      "publicTransit": { "label": "MetrôRio", "url": "https://www.metrorio.com.br" },
+      "rideHailing": { "label": "Uber / 99", "url": "https://www.uber.com/br/en/" },
+      "taxi": { "label": "Rio Taxi", "url": "https://www.rio.rj.gov.br" },
+      "airportTransfer": { "label": "BRT Airport Bus", "url": "https://www.bfrfrj.com.br" }
+    },
+    "tips": ["Metro + BRT cover most tourist areas", "Use Uber/99 for safety and fixed pricing"]
+  },
+  "seoul": {
+    "dailyCostRange": { "low": 500, "high": 1800 },
+    "airportTransferRange": { "low": 800, "high": 4500 },
+    "transitPassName": "T-money Card",
+    "links": {
+      "publicTransit": { "label": "Seoul Metro", "url": "https://www.seoulmetro.co.kr/en/" },
+      "rideHailing": { "label": "Kakao T", "url": "https://www.kakaomobility.com/en" },
+      "taxi": { "label": "Seoul Taxi", "url": "https://english.seoul.go.kr" },
+      "airportTransfer": { "label": "AREX (Airport Railroad)", "url": "https://www.arex.or.kr/main.do" }
+    },
+    "tips": ["AREX Express: Incheon to Seoul Station ~$9", "T-money card works on metro, bus, and convenience stores"]
+  },
+  "hong kong": {
+    "dailyCostRange": { "low": 600, "high": 2000 },
+    "airportTransferRange": { "low": 1000, "high": 4500 },
+    "transitPassName": "Octopus Card",
+    "links": {
+      "publicTransit": { "label": "MTR Hong Kong", "url": "https://www.mtr.com.hk/en/customer/main/" },
+      "rideHailing": { "label": "Uber HK", "url": "https://www.uber.com/hk/en/" },
+      "taxi": { "label": "HK Taxi", "url": "https://www.discoverhongkong.com" },
+      "airportTransfer": { "label": "Airport Express", "url": "https://www.mtr.com.hk/en/customer/services/airport_express.html" }
+    },
+    "tips": ["Airport Express: HKG to Central ~$14", "Octopus Card works everywhere—transit, shops, restaurants"]
+  },
+  "kuala lumpur": {
+    "dailyCostRange": { "low": 300, "high": 1200 },
+    "airportTransferRange": { "low": 300, "high": 3000 },
+    "transitPassName": "Touch 'n Go eWallet / MyRapid Card",
+    "links": {
+      "publicTransit": { "label": "RapidKL", "url": "https://www.myrapid.com.my" },
+      "rideHailing": { "label": "Grab Malaysia", "url": "https://www.grab.com/my/" },
+      "taxi": { "label": "KL Taxi", "url": "https://www.malaysia.travel" },
+      "airportTransfer": { "label": "KLIA Express", "url": "https://www.kliaekspres.com" }
+    },
+    "tips": ["KLIA Express: airport to KL Sentral ~$13", "Grab is the most reliable ride option"]
+  },
+  "bali": {
+    "dailyCostRange": { "low": 300, "high": 1500 },
+    "airportTransferRange": { "low": 300, "high": 2500 },
+    "transitPassName": "No transit pass (use ride-hailing)",
+    "links": {
+      "publicTransit": { "label": "Trans Sarbagita Bus", "url": "https://www.baliprovince.go.id" },
+      "rideHailing": { "label": "Grab / Gojek Bali", "url": "https://www.grab.com/id/en/" },
+      "taxi": { "label": "Bluebird Taxi", "url": "https://www.bluebirdgroup.com/en" },
+      "airportTransfer": { "label": "Airport Taxi / Grab", "url": "https://www.bfrfrj.com.br" }
+    },
+    "tips": ["Scooter rental ~$5/day—most popular local transport", "Use Grab or Gojek for fair, metered pricing"]
+  },
+  "marrakech": {
+    "dailyCostRange": { "low": 200, "high": 1500 },
+    "airportTransferRange": { "low": 300, "high": 2500 },
+    "transitPassName": "No transit pass (taxis & buses)",
+    "links": {
+      "publicTransit": { "label": "ALSA Bus Marrakech", "url": "https://www.alsa.ma" },
+      "rideHailing": { "label": "Careem Morocco", "url": "https://www.careem.com" },
+      "taxi": { "label": "Petit Taxi", "url": "https://www.visitmorocco.com" },
+      "airportTransfer": { "label": "Airport Bus Line 19", "url": "https://www.alsa.ma" }
+    },
+    "tips": ["Petit taxis (beige) are cheap for in-city trips ~$2-5", "Always agree on fare before getting in or insist on meter"]
+  },
+  "athens": {
+    "dailyCostRange": { "low": 500, "high": 1800 },
+    "airportTransferRange": { "low": 600, "high": 4500 },
+    "transitPassName": "Ath.ena Card",
+    "links": {
+      "publicTransit": { "label": "Athens Metro (STASY)", "url": "https://www.stasy.gr/index.php?lang=en" },
+      "rideHailing": { "label": "Uber / BEAT", "url": "https://www.uber.com/gr/en/" },
+      "taxi": { "label": "Athens Taxi", "url": "https://www.thisisathens.org" },
+      "airportTransfer": { "label": "Metro Line 3 (Airport)", "url": "https://www.stasy.gr/index.php?lang=en" }
+    },
+    "tips": ["Metro from airport to Syntagma ~$10", "5-day tourist ticket ~$10 for unlimited transit"]
+  },
+  "prague": {
+    "dailyCostRange": { "low": 400, "high": 1500 },
+    "airportTransferRange": { "low": 200, "high": 3500 },
+    "transitPassName": "Lítačka Card / Paper Tickets",
+    "links": {
+      "publicTransit": { "label": "Prague Public Transit (DPP)", "url": "https://www.dpp.cz/en" },
+      "rideHailing": { "label": "Bolt / Uber Prague", "url": "https://www.uber.com/cz/en/" },
+      "taxi": { "label": "AAA Taxi", "url": "https://www.aaataxi.cz/en/" },
+      "airportTransfer": { "label": "Airport Express Bus", "url": "https://www.dpp.cz/en" }
+    },
+    "tips": ["Airport Express bus ~$3.50", "24h pass ~$5 for unlimited metro, tram, and bus"]
+  },
+  "vienna": {
+    "dailyCostRange": { "low": 500, "high": 1800 },
+    "airportTransferRange": { "low": 400, "high": 4000 },
+    "transitPassName": "Wiener Linien Pass",
+    "links": {
+      "publicTransit": { "label": "Wiener Linien", "url": "https://www.wienerlinien.at/web/wiener-linien/en" },
+      "rideHailing": { "label": "Uber / Bolt Vienna", "url": "https://www.uber.com/at/en/" },
+      "taxi": { "label": "Vienna Taxi 40100", "url": "https://www.taxi40100.at" },
+      "airportTransfer": { "label": "CAT (City Airport Train)", "url": "https://www.cityairporttrain.com/en" }
+    },
+    "tips": ["S7 train from airport ~$4.40 (cheaper than CAT)", "48h/72h Vienna Card includes transit + museum discounts"]
+  },
+  "budapest": {
+    "dailyCostRange": { "low": 300, "high": 1400 },
+    "airportTransferRange": { "low": 200, "high": 3500 },
+    "transitPassName": "Budapest Travel Card",
+    "links": {
+      "publicTransit": { "label": "BKK Budapest", "url": "https://bkk.hu/en/" },
+      "rideHailing": { "label": "Bolt Budapest", "url": "https://bolt.eu" },
+      "taxi": { "label": "Főtaxi", "url": "https://www.fotaxi.hu/en/" },
+      "airportTransfer": { "label": "100E Airport Bus", "url": "https://bkk.hu/en/" }
+    },
+    "tips": ["100E bus: airport to city center ~$4", "24h travel card ~$6 for unlimited transit"]
+  },
+  "copenhagen": {
+    "dailyCostRange": { "low": 800, "high": 2500 },
+    "airportTransferRange": { "low": 500, "high": 4500 },
+    "transitPassName": "Rejsekort",
+    "links": {
+      "publicTransit": { "label": "DOT (Din Offentlige Transport)", "url": "https://www.rejseplanen.dk/webapp/index.html?language=en_EN" },
+      "rideHailing": { "label": "Uber / Bolt", "url": "https://www.uber.com/dk/en/" },
+      "taxi": { "label": "Taxa 4x35", "url": "https://www.taxa.dk/en/" },
+      "airportTransfer": { "label": "Metro M2 (Airport)", "url": "https://www.m.dk/en/" }
+    },
+    "tips": ["Metro from airport to city center ~$5", "Copenhagen Card includes unlimited transit + 80+ attractions"]
+  },
+  "stockholm": {
+    "dailyCostRange": { "low": 700, "high": 2500 },
+    "airportTransferRange": { "low": 800, "high": 5000 },
+    "transitPassName": "SL Access Card",
+    "links": {
+      "publicTransit": { "label": "SL Stockholm", "url": "https://sl.se/en/" },
+      "rideHailing": { "label": "Uber / Bolt", "url": "https://www.uber.com/se/en/" },
+      "taxi": { "label": "Taxi Stockholm", "url": "https://www.taxistockholm.se/en/" },
+      "airportTransfer": { "label": "Arlanda Express", "url": "https://www.arlandaexpress.com" }
+    },
+    "tips": ["Arlanda Express: airport to city ~$30", "Flygbussarna bus is cheaper ~$12"]
+  },
+  "madrid": {
+    "dailyCostRange": { "low": 500, "high": 1800 },
+    "airportTransferRange": { "low": 300, "high": 4000 },
+    "transitPassName": "Multi Card / Tourist Pass",
+    "links": {
+      "publicTransit": { "label": "Metro Madrid", "url": "https://www.metromadrid.es/en" },
+      "rideHailing": { "label": "Uber / Cabify", "url": "https://www.uber.com/es/en/" },
+      "taxi": { "label": "Madrid Taxi", "url": "https://www.esmadrid.com/en" },
+      "airportTransfer": { "label": "Metro Line 8 (Airport)", "url": "https://www.metromadrid.es/en" }
+    },
+    "tips": ["Metro airport supplement ~$3 on top of regular fare", "Tourist Travel Pass: unlimited transit from ~$9/day"]
+  },
+  "milan": {
+    "dailyCostRange": { "low": 500, "high": 2000 },
+    "airportTransferRange": { "low": 800, "high": 5000 },
+    "transitPassName": "ATM Milano Card",
+    "links": {
+      "publicTransit": { "label": "ATM Milano", "url": "https://www.atm.it/en" },
+      "rideHailing": { "label": "Uber / FREE NOW", "url": "https://www.uber.com/it/en/" },
+      "taxi": { "label": "Milan Taxi", "url": "https://www.comune.milano.it" },
+      "airportTransfer": { "label": "Malpensa Express", "url": "https://www.malpensaexpress.it/en/" }
+    },
+    "tips": ["Malpensa Express: airport to Cadorna ~$14", "24h ATM ticket ~$8 for unlimited transit"]
+  },
+  "munich": {
+    "dailyCostRange": { "low": 600, "high": 2000 },
+    "airportTransferRange": { "low": 800, "high": 5000 },
+    "transitPassName": "MVV Day Ticket",
+    "links": {
+      "publicTransit": { "label": "MVV Munich", "url": "https://www.mvv-muenchen.de/en/" },
+      "rideHailing": { "label": "Uber / FREE NOW", "url": "https://www.uber.com/de/en/" },
+      "taxi": { "label": "Munich Taxi", "url": "https://www.muenchen.de/int/en" },
+      "airportTransfer": { "label": "S-Bahn S1/S8 (Airport)", "url": "https://www.munich-airport.de/getting-there-by-public-transport-263219" }
+    },
+    "tips": ["S-Bahn from airport to city ~$13", "Airport-City Day Ticket ~$15 covers everything"]
+  },
+  "zurich": {
+    "dailyCostRange": { "low": 1000, "high": 3000 },
+    "airportTransferRange": { "low": 700, "high": 5000 },
+    "transitPassName": "ZVV Day Pass",
+    "links": {
+      "publicTransit": { "label": "ZVV Zurich", "url": "https://www.zvv.ch/zvv/en/home.html" },
+      "rideHailing": { "label": "Uber Zurich", "url": "https://www.uber.com/ch/en/" },
+      "taxi": { "label": "Zurich Taxi", "url": "https://www.zuerich.com/en" },
+      "airportTransfer": { "label": "S-Bahn to Zurich HB", "url": "https://www.sbb.ch/en" }
+    },
+    "tips": ["S-Bahn from airport ~$7", "ZVV 24h pass ~$9 for unlimited transit in zones 110"]
+  },
+  "los angeles": {
+    "dailyCostRange": { "low": 500, "high": 4000 },
+    "airportTransferRange": { "low": 200, "high": 6000 },
+    "transitPassName": "TAP Card",
+    "links": {
+      "publicTransit": { "label": "LA Metro", "url": "https://www.metro.net" },
+      "rideHailing": { "label": "Uber / Lyft LA", "url": "https://www.uber.com/us/en/" },
+      "taxi": { "label": "LA Yellow Cab", "url": "https://www.layellowcab.com" },
+      "airportTransfer": { "label": "FlyAway Bus", "url": "https://www.flylax.com/flyaway-bus" }
+    },
+    "tips": ["FlyAway bus: LAX to Union Station ~$10", "Car rental often necessary—LA is very spread out"]
+  },
+  "san francisco": {
+    "dailyCostRange": { "low": 600, "high": 3500 },
+    "airportTransferRange": { "low": 300, "high": 6000 },
+    "transitPassName": "Clipper Card",
+    "links": {
+      "publicTransit": { "label": "SFMTA (Muni)", "url": "https://www.sfmta.com" },
+      "rideHailing": { "label": "Uber / Lyft SF", "url": "https://www.uber.com/us/en/" },
+      "taxi": { "label": "Yellow Cab SF", "url": "https://www.yellowcabsf.com" },
+      "airportTransfer": { "label": "BART (SFO)", "url": "https://www.bart.gov" }
+    },
+    "tips": ["BART from SFO to downtown ~$10", "Muni passport: unlimited cable car + bus rides"]
+  },
+  "miami": {
+    "dailyCostRange": { "low": 500, "high": 3500 },
+    "airportTransferRange": { "low": 200, "high": 5000 },
+    "transitPassName": "EASY Card",
+    "links": {
+      "publicTransit": { "label": "Miami-Dade Transit", "url": "https://www.miamidade.gov/transit/" },
+      "rideHailing": { "label": "Uber / Lyft Miami", "url": "https://www.uber.com/us/en/" },
+      "taxi": { "label": "Miami Taxi", "url": "https://www.miamidade.gov" },
+      "airportTransfer": { "label": "MIA Mover + Metrorail", "url": "https://www.miami-airport.com/mia_mover.asp" }
+    },
+    "tips": ["Free MIA Mover connects airport to Metrorail", "Metrorail to downtown ~$2.25"]
+  },
+  "chicago": {
+    "dailyCostRange": { "low": 500, "high": 3000 },
+    "airportTransferRange": { "low": 250, "high": 5500 },
+    "transitPassName": "Ventra Card",
+    "links": {
+      "publicTransit": { "label": "CTA Chicago", "url": "https://www.transitchicago.com" },
+      "rideHailing": { "label": "Uber / Lyft Chicago", "url": "https://www.uber.com/us/en/" },
+      "taxi": { "label": "Chicago Taxi", "url": "https://www.chicago.gov" },
+      "airportTransfer": { "label": "CTA Blue Line (O'Hare)", "url": "https://www.transitchicago.com/blueline/" }
+    },
+    "tips": ["CTA Blue Line: O'Hare to downtown ~$5", "Ventra day pass ~$5 for unlimited CTA rides"]
+  },
+  "washington dc": {
+    "dailyCostRange": { "low": 500, "high": 2500 },
+    "airportTransferRange": { "low": 300, "high": 5000 },
+    "transitPassName": "SmarTrip Card",
+    "links": {
+      "publicTransit": { "label": "WMATA Metro", "url": "https://www.wmata.com" },
+      "rideHailing": { "label": "Uber / Lyft DC", "url": "https://www.uber.com/us/en/" },
+      "taxi": { "label": "DC Taxi", "url": "https://dfhv.dc.gov" },
+      "airportTransfer": { "label": "Metro Silver Line (Dulles)", "url": "https://www.wmata.com" }
+    },
+    "tips": ["Metro Silver Line now reaches Dulles airport ~$6", "Many Smithsonian museums are free!"]
+  },
+  "boston": {
+    "dailyCostRange": { "low": 500, "high": 2500 },
+    "airportTransferRange": { "low": 200, "high": 4500 },
+    "transitPassName": "CharlieCard",
+    "links": {
+      "publicTransit": { "label": "MBTA (The T)", "url": "https://www.mbta.com" },
+      "rideHailing": { "label": "Uber / Lyft Boston", "url": "https://www.uber.com/us/en/" },
+      "taxi": { "label": "Boston Taxi", "url": "https://www.boston.gov" },
+      "airportTransfer": { "label": "Blue Line + Silver Line (Free)", "url": "https://www.mbta.com" }
+    },
+    "tips": ["Silver Line from Logan airport is FREE to South Station", "CharlieCard: $2.40 per subway ride"]
+  },
+  "honolulu": {
+    "dailyCostRange": { "low": 500, "high": 3000 },
+    "airportTransferRange": { "low": 200, "high": 5000 },
+    "transitPassName": "HOLO Card",
+    "links": {
+      "publicTransit": { "label": "TheBus Honolulu", "url": "https://www.thebus.org" },
+      "rideHailing": { "label": "Uber / Lyft Hawaii", "url": "https://www.uber.com/us/en/" },
+      "taxi": { "label": "Charley's Taxi", "url": "https://www.charleystaxi.com" },
+      "airportTransfer": { "label": "Skyline Rail + TheBus", "url": "https://www.honolulutransit.org" }
+    },
+    "tips": ["TheBus Route 20: airport to Waikiki ~$3", "Car rental recommended for North Shore and island exploration"]
+  },
+  "cancun": {
+    "dailyCostRange": { "low": 300, "high": 2000 },
+    "airportTransferRange": { "low": 300, "high": 4000 },
+    "transitPassName": "No transit pass (buses and taxis)",
+    "links": {
+      "publicTransit": { "label": "ADO Bus", "url": "https://www.ado.com.mx" },
+      "rideHailing": { "label": "Uber Cancún", "url": "https://www.uber.com/mx/en/" },
+      "taxi": { "label": "Cancún Taxi", "url": "https://www.cancun.travel" },
+      "airportTransfer": { "label": "ADO Airport Bus", "url": "https://www.ado.com.mx" }
+    },
+    "tips": ["ADO bus from airport to Hotel Zone ~$8", "R-1 and R-2 local buses are very cheap ~$1"]
+  },
+  "phuket": {
+    "dailyCostRange": { "low": 300, "high": 1500 },
+    "airportTransferRange": { "low": 300, "high": 2500 },
+    "transitPassName": "No transit pass (use ride-hailing)",
+    "links": {
+      "publicTransit": { "label": "Phuket Smart Bus", "url": "https://www.phuketsmartbus.com" },
+      "rideHailing": { "label": "Grab Phuket", "url": "https://www.grab.com/th/en/" },
+      "taxi": { "label": "Phuket Taxi Meter", "url": "https://www.tourismthailand.org" },
+      "airportTransfer": { "label": "Airport Bus / Grab", "url": "https://www.phuketsmartbus.com" }
+    },
+    "tips": ["Smart Bus: airport to beaches ~$3", "Tuk-tuks are expensive—negotiate or use Grab"]
+  },
+  "hanoi": {
+    "dailyCostRange": { "low": 200, "high": 1000 },
+    "airportTransferRange": { "low": 200, "high": 2500 },
+    "transitPassName": "No transit pass (cash-based)",
+    "links": {
+      "publicTransit": { "label": "Hanoi Metro Line 2A", "url": "https://hfrwtlhm.com" },
+      "rideHailing": { "label": "Grab Vietnam", "url": "https://www.grab.com/vn/en/" },
+      "taxi": { "label": "Mai Linh Taxi", "url": "https://www.mailinh.vn" },
+      "airportTransfer": { "label": "Vietnam Airlines Minibus", "url": "https://www.vietnamairlines.com" }
+    },
+    "tips": ["Grab is essential—avoid street taxis", "Airport minibus ~$2, Grab to Old Quarter ~$15"]
+  },
+  "nairobi": {
+    "dailyCostRange": { "low": 200, "high": 1500 },
+    "airportTransferRange": { "low": 200, "high": 3000 },
+    "transitPassName": "No transit pass (matatus & ride-hailing)",
+    "links": {
+      "publicTransit": { "label": "Matatu / Bus", "url": "https://www.nairobimetro.go.ke" },
+      "rideHailing": { "label": "Uber / Bolt Nairobi", "url": "https://www.uber.com/ke/en/" },
+      "taxi": { "label": "Nairobi Taxi", "url": "https://www.magicalkenya.com" },
+      "airportTransfer": { "label": "SGR Train / Uber", "url": "https://metickets.krc.co.ke" }
+    },
+    "tips": ["Uber/Bolt are the safest and most reliable options", "SGR train from JKIA available for some routes"]
+  },
+  "johannesburg": {
+    "dailyCostRange": { "low": 300, "high": 2000 },
+    "airportTransferRange": { "low": 500, "high": 4000 },
+    "transitPassName": "Gautrain Gold Card",
+    "links": {
+      "publicTransit": { "label": "Gautrain", "url": "https://www.gautrain.co.za" },
+      "rideHailing": { "label": "Uber / Bolt JHB", "url": "https://www.uber.com/za/en/" },
+      "taxi": { "label": "Johannesburg Taxi", "url": "https://www.joburg.org.za" },
+      "airportTransfer": { "label": "Gautrain (OR Tambo)", "url": "https://www.gautrain.co.za" }
+    },
+    "tips": ["Gautrain: OR Tambo to Sandton ~$12", "Uber is the safest way to get around JHB"]
+  },
+  "lima": {
+    "dailyCostRange": { "low": 200, "high": 1200 },
+    "airportTransferRange": { "low": 300, "high": 3000 },
+    "transitPassName": "Lima Pass / Tarjeta Lima",
+    "links": {
+      "publicTransit": { "label": "Metropolitano BRT", "url": "https://www.metropolitano.com.pe" },
+      "rideHailing": { "label": "Uber / InDriver", "url": "https://www.uber.com/pe/en/" },
+      "taxi": { "label": "Lima Taxi", "url": "https://www.peru.travel" },
+      "airportTransfer": { "label": "Airport Express Lima", "url": "https://www.airportexpresslima.com" }
+    },
+    "tips": ["Airport Express: Jorge Chávez to Miraflores ~$8", "Use only official taxis or Uber—avoid street hails"]
+  },
+  "bogota": {
+    "dailyCostRange": { "low": 200, "high": 1200 },
+    "airportTransferRange": { "low": 200, "high": 2500 },
+    "transitPassName": "Tullave Card",
+    "links": {
+      "publicTransit": { "label": "TransMilenio", "url": "https://www.transmilenio.gov.co" },
+      "rideHailing": { "label": "Uber / DiDi", "url": "https://www.uber.com/co/en/" },
+      "taxi": { "label": "Bogotá Taxi", "url": "https://www.bogota.gov.co" },
+      "airportTransfer": { "label": "TransMilenio / Uber", "url": "https://www.transmilenio.gov.co" }
+    },
+    "tips": ["TransMilenio BRT ~$0.80 per ride", "Use authorized airport taxis or Uber from El Dorado"]
+  },
+  "osaka": {
+    "dailyCostRange": { "low": 700, "high": 1800 },
+    "airportTransferRange": { "low": 800, "high": 4500 },
+    "transitPassName": "ICOCA Card / Osaka Metro Pass",
+    "links": {
+      "publicTransit": { "label": "Osaka Metro", "url": "https://www.osakametro.co.jp/en/" },
+      "rideHailing": { "label": "Uber / GO Taxi", "url": "https://www.uber.com/jp/en/" },
+      "taxi": { "label": "Osaka Taxi", "url": "https://www.osaka-info.jp/en/" },
+      "airportTransfer": { "label": "Nankai Rapi:t (KIX)", "url": "https://www.nankai.co.jp/en/" }
+    },
+    "tips": ["Nankai Rapi:t: Kansai airport to Namba ~$14", "Osaka Amazing Pass: unlimited metro + free attractions"]
+  },
+  "dublin": {
+    "dailyCostRange": { "low": 600, "high": 2200 },
+    "airportTransferRange": { "low": 500, "high": 4000 },
+    "transitPassName": "Leap Card",
+    "links": {
+      "publicTransit": { "label": "Dublin Bus / Luas", "url": "https://www.dublinbus.ie" },
+      "rideHailing": { "label": "Uber / FREE NOW", "url": "https://www.uber.com/ie/en/" },
+      "taxi": { "label": "Dublin Taxi", "url": "https://www.transportforireland.ie" },
+      "airportTransfer": { "label": "Aircoach / Dublin Bus", "url": "https://www.aircoach.ie" }
+    },
+    "tips": ["Aircoach: airport to city center ~$8", "Leap Card: discounted fares on bus, Luas, and DART"]
+  },
+  "edinburgh": {
+    "dailyCostRange": { "low": 500, "high": 2000 },
+    "airportTransferRange": { "low": 500, "high": 3500 },
+    "transitPassName": "Lothian Buses Day Ticket",
+    "links": {
+      "publicTransit": { "label": "Lothian Buses / Tram", "url": "https://www.lothianbuses.com" },
+      "rideHailing": { "label": "Uber Edinburgh", "url": "https://www.uber.com/gb/en/" },
+      "taxi": { "label": "Edinburgh Taxi", "url": "https://www.edinburgh.org" },
+      "airportTransfer": { "label": "Airlink 100 / Tram", "url": "https://www.edinburghairport.com" }
+    },
+    "tips": ["Tram from airport to city center ~$7", "Airlink 100 bus is a cheaper alternative ~$5"]
+  },
+  "_default": {
+    "dailyCostRange": { "low": 500, "high": 2500 },
+    "airportTransferRange": { "low": 500, "high": 5000 },
+    "transitPassName": "Local transit pass",
+    "links": {
+      "publicTransit": { "label": "Local Public Transit", "url": "" },
+      "rideHailing": { "label": "Uber / Local Ride-Hailing", "url": "https://www.uber.com" },
+      "taxi": { "label": "Local Taxi", "url": "" },
+      "airportTransfer": { "label": "Airport Transfer", "url": "" }
+    },
+    "tips": ["Research local transit options before arrival", "Download ride-hailing apps for your destination"]
+  }
+}

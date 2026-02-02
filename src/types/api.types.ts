@@ -121,6 +121,13 @@ export interface TripOptionResponse {
 
   /** Activities included in this trip (Phase 3) */
   activities?: ActivityResponse[];
+
+  /** Transport cost estimate range in cents */
+  transportEstimate?: {
+    costRangeLow: number;
+    costRangeHigh: number;
+    isEstimate: boolean;
+  };
 }
 
 /**
