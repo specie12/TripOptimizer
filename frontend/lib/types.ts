@@ -37,6 +37,8 @@ export interface TripOptionResponse {
   destination: string;
   totalCost: number; // In cents
   remainingBudget: number; // In cents
+  foodBudget: number; // In cents
+  transportBudget: number; // In cents
   score: number; // 0-1 (NOT displayed to users)
   matchPercentage: number; // Phase 7: 0-100 (derived from score)
   highlights: string[]; // Phase 7: Top 3-5 attractions

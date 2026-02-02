@@ -30,9 +30,8 @@ export default function WhatIsIncluded({
   const activitiesCost = pricedActivities.reduce((sum, a) => sum + a.price!, 0);
   const activityCount = tripOption.activities?.length || 0;
 
-  // Estimate transport from remaining budget
-  const remainingAfterActivities = tripOption.remainingBudget - activitiesCost;
-  const estimatedTransport = Math.floor(remainingAfterActivities * 0.4);
+  // Use backend-computed budget allocation for transport
+  const estimatedTransport = tripOption.transportBudget;
 
   const inclusions = [
     {

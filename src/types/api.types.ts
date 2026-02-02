@@ -82,6 +82,12 @@ export interface TripOptionResponse {
   /** Remaining budget in cents for activities */
   remainingBudget: number;
 
+  /** Budget allocated for food in cents */
+  foodBudget: number;
+
+  /** Budget allocated for local transport in cents */
+  transportBudget: number;
+
   /** Score from 0-1 (higher is better) */
   score: number;
 

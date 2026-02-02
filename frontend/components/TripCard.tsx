@@ -61,10 +61,9 @@ export default function TripCard({ tripOption, budgetTotal }: TripCardProps) {
   const hotelCost = currentTripOption.hotel.priceTotal;
   const activitiesCost = currentTripOption.activities?.filter(a => a.price).reduce((sum, a) => sum + a.price!, 0) || 0;
 
-  // Estimate food and transport from remaining budget
-  const remainingAfterActivities = currentTripOption.remainingBudget - activitiesCost;
-  const estimatedFood = Math.floor(remainingAfterActivities * 0.6);
-  const estimatedTransport = Math.floor(remainingAfterActivities * 0.4);
+  // Use backend-computed budget allocations for food and transport
+  const estimatedFood = currentTripOption.foodBudget;
+  const estimatedTransport = currentTripOption.transportBudget;
 
   const costBreakdown = [
     { category: 'Flights', amount: flightCost, icon: '✈️', color: 'bg-blue-500' },

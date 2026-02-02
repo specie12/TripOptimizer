@@ -386,6 +386,8 @@ router.post(
             destination: option.destination,
             totalCost: option.totalCost,
             remainingBudget: option.remainingBudget,
+            foodBudget: extendedAllocation.allocations.food,
+            transportBudget: extendedAllocation.allocations.transport,
             score: option.score,
             matchPercentage,
             highlights,
