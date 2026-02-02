@@ -1,12 +1,46 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import ChatInterface from './ChatInterface';
+import { ChatMessage } from '../lib/types';
+
+const SESSION_KEY = 'tripoptimizer-widget-chat';
+
+const WELCOME_MESSAGE: ChatMessage = {
+  id: 'welcome',
+  role: 'assistant',
+  content: "Hi! I'm your travel planning assistant. Tell me about the trip you're dreaming of — where you'd like to go, your budget, how long, and I'll find the best options for you!",
+  timestamp: new Date(),
+};
+
+function loadMessages(): ChatMessage[] {
+  if (typeof window === 'undefined') return [WELCOME_MESSAGE];
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as ChatMessage[];
+      return parsed.map((m) => ({ ...m, timestamp: new Date(m.timestamp) }));
+    }
+  } catch {
+    // corrupt data — start fresh
+  }
+  return [WELCOME_MESSAGE];
+}
 
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>(loadMessages);
   const pathname = usePathname();
+
+  // Persist messages to sessionStorage whenever they change
+  useEffect(() => {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(messages));
+  }, [messages]);
+
+  const setMessagesAndPersist = useCallback((update: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => {
+    setMessages(update);
+  }, []);
 
   // Hide widget on the dedicated chat page
   if (pathname === '/chat') return null;
@@ -38,7 +72,7 @@ export default function ChatWidget() {
           </div>
 
           {/* Chat body */}
-          <ChatInterface mode="widget" onClose={() => setIsOpen(false)} />
+          <ChatInterface mode="widget" onClose={() => setIsOpen(false)} messages={messages} setMessages={setMessagesAndPersist} />
         </div>
       )}
 

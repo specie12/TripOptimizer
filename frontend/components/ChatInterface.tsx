@@ -8,6 +8,9 @@ import { sendChatMessage } from '../lib/api';
 interface ChatInterfaceProps {
   mode: 'widget' | 'fullpage';
   onClose?: () => void;
+  /** When provided, ChatInterface uses this external state instead of its own useState. */
+  messages?: ChatMessage[];
+  setMessages?: (update: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => void;
 }
 
 const WELCOME_MESSAGE: ChatMessage = {
@@ -36,9 +39,11 @@ function redirectToResults(params: ExtractedTripParams, router: ReturnType<typeo
   router.push(`/results?${searchParams.toString()}`);
 }
 
-export default function ChatInterface({ mode, onClose }: ChatInterfaceProps) {
+export default function ChatInterface({ mode, onClose, messages: externalMessages, setMessages: externalSetMessages }: ChatInterfaceProps) {
   const router = useRouter();
-  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
+  const [internalMessages, internalSetMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
+  const messages = externalMessages ?? internalMessages;
+  const setMessages = externalSetMessages ?? internalSetMessages;
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
