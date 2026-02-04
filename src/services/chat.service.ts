@@ -41,7 +41,13 @@ interface ChatResponse {
   extractedParams?: ExtractedTripParams;
 }
 
-const SYSTEM_PROMPT = `You are a friendly and helpful travel planning assistant for TripOptimizer. Your job is to have a natural conversation to gather trip details from the user.
+function buildSystemPrompt(): string {
+  const today = new Date().toISOString().split('T')[0]; // e.g. "2026-02-01"
+  const year = new Date().getFullYear();
+
+  return `You are a friendly and helpful travel planning assistant for TripOptimizer. Your job is to have a natural conversation to gather trip details from the user.
+
+Today's date is ${today}.
 
 You need to collect these REQUIRED fields before planning can begin:
 1. originCity — where they're traveling from
@@ -51,7 +57,7 @@ You need to collect these REQUIRED fields before planning can begin:
 
 You can also optionally gather:
 - destination — where they want to go (if not specified, the system will suggest destinations)
-- startDate — when they want to travel (ISO date format like 2025-06-15)
+- startDate — when they want to travel (ISO date format like ${year}-06-15)
 - tripPace — RELAXED, BALANCED, or PACKED
 - accommodationType — HOTELS, AIRBNB, RESORTS, or HOSTELS
 - interests — array of interest categories like CULTURE_HISTORY, FOOD_DINING, OUTDOOR_ADVENTURE, NIGHTLIFE, BEACH_RELAXATION, SHOPPING, ARTS_ENTERTAINMENT, SPORTS_FITNESS, NATURE_WILDLIFE, FAMILY_FRIENDLY
@@ -64,7 +70,10 @@ Guidelines:
 - If they say something vague like "a week", interpret as 7 days
 - If they say "cheap" or "budget-friendly", use BUDGET style. "Moderate" or "mid-range" → MID_RANGE. "Balanced" or no preference → BALANCED. "Luxury" or "splurge" → LUXURY
 - Once you have ALL 4 required fields, call the extract_trip_parameters tool
-- Don't ask for optional fields if the user seems eager to get started — just extract what you have`;
+- Don't ask for optional fields if the user seems eager to get started — just extract what you have
+- When the user mentions a date without a year, assume the current year (${year}). If that date has already passed, use the next year (${year + 1})
+- Start dates must be today or in the future — never in the past`;
+}
 
 const EXTRACT_TOOL: Anthropic.Tool = {
   name: 'extract_trip_parameters',
@@ -121,9 +130,9 @@ export async function processMessage(
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 1024,
-      system: SYSTEM_PROMPT,
+      system: buildSystemPrompt(),
       tools: [EXTRACT_TOOL],
       messages,
     });

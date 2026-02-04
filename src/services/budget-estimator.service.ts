@@ -130,7 +130,7 @@ export async function isBudgetSufficient(
   const estimate = await estimateMinimumBudget(origin, destination, numberOfDays, numberOfTravelers);
 
   const percentageOfMinimum = (budgetTotal / estimate.minimumBudget) * 100;
-  const sufficient = budgetTotal >= estimate.minimumBudget * 0.8; // 80% threshold
+  const sufficient = budgetTotal >= estimate.minimumBudget * 0.6; // 60% threshold — candidate filter is the real gate
 
   console.log(`[BudgetEstimator] Budget check: $${budgetTotal / 100} is ${percentageOfMinimum.toFixed(0)}% of minimum ($${estimate.minimumBudget / 100})`);
 
