@@ -28,3 +28,6 @@ npm-debug.log*
 
 # Test coverage
 coverage/
+
+# Debug/test scripts
+test-*.js
