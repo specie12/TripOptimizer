@@ -31,3 +31,6 @@ coverage/
 
 # Debug/test scripts
 test-*.js
+
+# Files with secrets (keep local only)
+BOOKING_FLOW_TEST_PLAN.md
