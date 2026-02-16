@@ -124,7 +124,7 @@ function ResultsContent() {
           </h1>
           <p className="text-gray-600">
             {days} days &middot; {formatCurrency(budgetCents)} budget
-            {startDate && ` &middot; Departing ${new Date(startDate + 'T00:00:00').toLocaleDateString()}`}
+            {startDate && <> &middot; Departing {new Date(startDate + 'T00:00:00').toLocaleDateString()}</>}
           </p>
         </div>
 

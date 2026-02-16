@@ -18,12 +18,50 @@ import type {
 
 const prisma = new PrismaClient();
 
+const DEFAULT_BUDGET_CONFIGS: Record<string, Omit<BudgetConfig, 'id' | 'createdAt'>> = {
+  BUDGET: {
+    travelStyle: TravelStyle.BUDGET,
+    flightPct: 0.35,
+    hotelPct: 0.35,
+    activityPct: 0.10,
+    foodPct: 0.08,
+    transportPct: 0.07,
+    contingencyPct: 0.05,
+  },
+  MID_RANGE: {
+    travelStyle: TravelStyle.MID_RANGE,
+    flightPct: 0.30,
+    hotelPct: 0.35,
+    activityPct: 0.15,
+    foodPct: 0.12,
+    transportPct: 0.05,
+    contingencyPct: 0.03,
+  },
+  BALANCED: {
+    travelStyle: TravelStyle.BALANCED,
+    flightPct: 0.35,
+    hotelPct: 0.40,
+    activityPct: 0.12,
+    foodPct: 0.08,
+    transportPct: 0.03,
+    contingencyPct: 0.02,
+  },
+  LUXURY: {
+    travelStyle: TravelStyle.LUXURY,
+    flightPct: 0.25,
+    hotelPct: 0.45,
+    activityPct: 0.15,
+    foodPct: 0.10,
+    transportPct: 0.03,
+    contingencyPct: 0.02,
+  },
+};
+
 /**
  * Get budget configuration for a travel style
  *
  * @param travelStyle - BUDGET or BALANCED
- * @returns BudgetConfig from database
- * @throws Error if config not found
+ * @returns BudgetConfig from database, or hardcoded fallback if not seeded
  */
 export async function getBudgetConfig(
   travelStyle: TravelStyle
@@ -33,7 +71,12 @@ export async function getBudgetConfig(
   });
 
   if (!config) {
-    throw new Error(`BudgetConfig not found for travelStyle: ${travelStyle}`);
+    const fallback = DEFAULT_BUDGET_CONFIGS[travelStyle];
+    if (!fallback) {
+      throw new Error(`BudgetConfig not found for travelStyle: ${travelStyle}`);
+    }
+    console.warn(`BudgetConfig not found in DB for ${travelStyle}, using fallback defaults`);
+    return { id: 'fallback', createdAt: new Date(), ...fallback } as BudgetConfig;
   }
 
   return config;
@@ -120,7 +163,20 @@ export async function getExtendedBudgetConfig(
   });
 
   if (!config) {
-    throw new Error(`BudgetConfig not found for travelStyle: ${travelStyle}`);
+    const fallback = DEFAULT_BUDGET_CONFIGS[travelStyle];
+    if (!fallback) {
+      throw new Error(`BudgetConfig not found for travelStyle: ${travelStyle}`);
+    }
+    console.warn(`BudgetConfig not found in DB for ${travelStyle}, using fallback defaults`);
+    return {
+      travelStyle: fallback.travelStyle,
+      flightPct: fallback.flightPct,
+      hotelPct: fallback.hotelPct,
+      activityPct: fallback.activityPct,
+      foodPct: fallback.foodPct,
+      transportPct: fallback.transportPct,
+      contingencyPct: fallback.contingencyPct,
+    };
   }
 
   return {
